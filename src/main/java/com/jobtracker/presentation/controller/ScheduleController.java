@@ -2,7 +2,7 @@ package com.jobtracker.presentation.controller;
 
 import com.jobtracker.application.service.ScheduleService;
 import com.jobtracker.domain.schedule.Schedule;
-import com.jobtracker.presentation.controller.dto.ScheduleRequest;
+import com.jobtracker.application.service.dto.ScheduleRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;

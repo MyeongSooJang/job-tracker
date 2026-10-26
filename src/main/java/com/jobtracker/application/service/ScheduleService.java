@@ -3,7 +3,7 @@ package com.jobtracker.application.service;
 import com.jobtracker.domain.application.Application;
 import com.jobtracker.domain.schedule.Schedule;
 import com.jobtracker.domain.schedule.ScheduleRepository;
-import com.jobtracker.presentation.controller.dto.ScheduleRequest;
+import com.jobtracker.application.service.dto.ScheduleRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

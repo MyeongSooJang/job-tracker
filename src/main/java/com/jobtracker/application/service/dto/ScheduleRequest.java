@@ -1,4 +1,4 @@
-package com.jobtracker.presentation.controller.dto;
+package com.jobtracker.application.service.dto;
 
 import com.jobtracker.domain.schedule.ScheduleType;
 import jakarta.validation.constraints.NotBlank;

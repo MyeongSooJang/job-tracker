@@ -24,6 +24,7 @@ public class ApplicationService {
     @Transactional
     public Application register(ApplicationRequest request) {
         Company company = companyService.findById(request.companyId());
+        // TODO: replace with authenticated userId when JWT auth is added
         return applicationRepository.save(
                 Application.create(1L, company, request.position(), request.appliedDate())
         );

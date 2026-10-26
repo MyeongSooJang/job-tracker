@@ -2,8 +2,8 @@ package com.jobtracker.presentation.controller;
 
 import com.jobtracker.application.service.InterviewService;
 import com.jobtracker.domain.interview.Interview;
-import com.jobtracker.presentation.controller.dto.InterviewQuestionRequest;
-import com.jobtracker.presentation.controller.dto.InterviewRequest;
+import com.jobtracker.application.service.dto.InterviewQuestionRequest;
+import com.jobtracker.application.service.dto.InterviewRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

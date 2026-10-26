@@ -5,8 +5,8 @@ import com.jobtracker.domain.interview.Interview;
 import com.jobtracker.domain.interview.InterviewRepository;
 import com.jobtracker.global.exception.BusinessException;
 import com.jobtracker.global.exception.ErrorCode;
-import com.jobtracker.presentation.controller.dto.InterviewQuestionRequest;
-import com.jobtracker.presentation.controller.dto.InterviewRequest;
+import com.jobtracker.application.service.dto.InterviewQuestionRequest;
+import com.jobtracker.application.service.dto.InterviewRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,6 +38,9 @@ public class InterviewService {
     public Interview addQuestion(Long applicationId, Long interviewId, InterviewQuestionRequest request) {
         Interview interview = interviewRepository.findById(interviewId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.INTERVIEW_NOT_FOUND));
+        if (!interview.getApplication().getId().equals(applicationId)) {
+            throw new BusinessException(ErrorCode.INTERVIEW_NOT_FOUND);
+        }
         interview.addQuestion(request.question(), request.answer(), request.memo());
         return interview;
     }

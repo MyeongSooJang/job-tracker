@@ -1,4 +1,4 @@
-package com.jobtracker.presentation.controller.dto;
+package com.jobtracker.application.service.dto;
 
 import jakarta.validation.constraints.NotBlank;
 

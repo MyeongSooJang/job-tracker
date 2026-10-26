@@ -24,5 +24,6 @@ class CompanyTest {
 
         assertThat(company.getName()).isEqualTo("카카오뱅크");
         assertThat(company.getIndustry()).isEqualTo("핀테크");
+        assertThat(company.getWebsite()).isEqualTo("https://kakaobank.com");
     }
 }

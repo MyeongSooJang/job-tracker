@@ -2,7 +2,7 @@ package com.jobtracker.presentation.controller;
 
 import com.jobtracker.application.service.CompanyService;
 import com.jobtracker.domain.company.Company;
-import com.jobtracker.presentation.controller.dto.CompanyRequest;
+import com.jobtracker.application.service.dto.CompanyRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

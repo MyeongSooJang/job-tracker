@@ -4,7 +4,7 @@ import com.jobtracker.domain.company.Company;
 import com.jobtracker.domain.company.CompanyRepository;
 import com.jobtracker.global.exception.BusinessException;
 import com.jobtracker.global.exception.ErrorCode;
-import com.jobtracker.presentation.controller.dto.CompanyRequest;
+import com.jobtracker.application.service.dto.CompanyRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,6 +20,7 @@ public class CompanyService {
 
     @Transactional
     public Company register(CompanyRequest request) {
+        // TODO: replace with authenticated userId when JWT auth is added
         return companyRepository.save(
                 Company.create(1L, request.name(), request.industry(), request.website())
         );

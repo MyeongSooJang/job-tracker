@@ -3,6 +3,8 @@ package com.jobtracker.presentation;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jobtracker.application.service.CompanyService;
 import com.jobtracker.domain.company.Company;
+import com.jobtracker.global.exception.BusinessException;
+import com.jobtracker.global.exception.ErrorCode;
 import com.jobtracker.presentation.controller.CompanyController;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +18,7 @@ import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.willThrow;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -47,5 +50,25 @@ class CompanyControllerTest {
         mockMvc.perform(get("/api/companies"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].name").value("카카오"));
+    }
+
+    @Test
+    void GET_companies_id_회사를_단건_조회한다() throws Exception {
+        Company company = Company.create(1L, "카카오", "IT", "https://kakao.com");
+        given(companyService.findById(1L)).willReturn(company);
+
+        mockMvc.perform(get("/api/companies/1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("카카오"));
+    }
+
+    @Test
+    void GET_companies_id_존재하지_않으면_404를_반환한다() throws Exception {
+        given(companyService.findById(1L))
+                .willThrow(new BusinessException(ErrorCode.COMPANY_NOT_FOUND));
+
+        mockMvc.perform(get("/api/companies/1"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("COMPANY_NOT_FOUND"));
     }
 }

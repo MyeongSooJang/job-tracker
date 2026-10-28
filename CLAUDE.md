@@ -41,3 +41,4 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## 작업 규칙
 
 - 기능 하나가 끝나고 `./gradlew test`가 통과하면 별도 확인 없이 커밋하고 현재 브랜치로 push한다. 커밋 메시지는 기존 이력처럼 `feat:`/`fix:` 접두사 + 한글로 작성한다. 테스트가 실패하면 커밋/push하지 않는다.
+- 커밋 메시지에 `Co-Authored-By` 등 Claude 관련 attribution 줄을 넣지 않는다.

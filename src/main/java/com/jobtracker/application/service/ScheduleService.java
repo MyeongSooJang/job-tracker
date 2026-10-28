@@ -1,7 +1,10 @@
 package com.jobtracker.application.service;
 
 import com.jobtracker.domain.application.Application;
+import com.jobtracker.domain.review.Review;
+import com.jobtracker.domain.review.ReviewRepository;
 import com.jobtracker.domain.schedule.Schedule;
+import com.jobtracker.domain.schedule.ScheduleType;
 import com.jobtracker.domain.schedule.ScheduleRepository;
 import com.jobtracker.application.service.dto.ScheduleAddressRequest;
 import com.jobtracker.application.service.dto.ScheduleRequest;
@@ -21,14 +24,20 @@ public class ScheduleService {
 
     private final ScheduleRepository scheduleRepository;
     private final ApplicationService applicationService;
+    private final ReviewRepository reviewRepository;
 
     @Transactional
     public Schedule register(ScheduleRequest request) {
         Application application = applicationService.findById(request.applicationId());
-        return scheduleRepository.save(
+        Schedule schedule = scheduleRepository.save(
                 Schedule.create(application, request.title(), request.scheduledAt(),
                         request.type(), request.address(), request.note())
         );
+        if (request.type() == ScheduleType.INTERVIEW
+                && !reviewRepository.existsByApplicationId(application.getId())) {
+            reviewRepository.save(Review.create(application));
+        }
+        return schedule;
     }
 
     @Transactional

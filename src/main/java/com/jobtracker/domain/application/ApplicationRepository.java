@@ -7,4 +7,5 @@ public interface ApplicationRepository {
     Application save(Application application);
     Optional<Application> findById(Long id);
     List<Application> findAll();
+    List<Application> findByStatus(ApplicationStatus status);
 }

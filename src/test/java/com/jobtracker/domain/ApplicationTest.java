@@ -28,11 +28,20 @@ class ApplicationTest {
     }
 
     @Test
-    void advanceStatus_서류합격으로_전이한다() {
+    void advanceStatus_면접으로_전이한다() {
         Application app = Application.create(1L, company(), "백엔드 개발자", LocalDate.now());
-        app.advanceStatus(ApplicationStatus.RESUME_PASSED);
+        app.advanceStatus(ApplicationStatus.INTERVIEW);
 
-        assertThat(app.getStatus()).isEqualTo(ApplicationStatus.RESUME_PASSED);
+        assertThat(app.getStatus()).isEqualTo(ApplicationStatus.INTERVIEW);
+    }
+
+    @Test
+    void advanceStatus_면접에서_합격으로_전이한다() {
+        Application app = Application.create(1L, company(), "백엔드 개발자", LocalDate.now());
+        app.advanceStatus(ApplicationStatus.INTERVIEW);
+        app.advanceStatus(ApplicationStatus.ACCEPTED);
+
+        assertThat(app.getStatus()).isEqualTo(ApplicationStatus.ACCEPTED);
     }
 
     @Test
@@ -48,30 +57,8 @@ class ApplicationTest {
     void advanceStatus_불합격은_모든_진행_상태에서_가능하다(ApplicationStatus fromStatus) {
         Application app = Application.create(1L, company(), "백엔드 개발자", LocalDate.now());
 
-        // advance to the target status first
-        switch (fromStatus) {
-            case RESUME_SUBMITTED:
-                // already initial state, no advance needed
-                break;
-            case RESUME_PASSED:
-                app.advanceStatus(ApplicationStatus.RESUME_PASSED);
-                break;
-            case INTERVIEW_1:
-                app.advanceStatus(ApplicationStatus.RESUME_PASSED);
-                app.advanceStatus(ApplicationStatus.INTERVIEW_1);
-                break;
-            case INTERVIEW_2:
-                app.advanceStatus(ApplicationStatus.RESUME_PASSED);
-                app.advanceStatus(ApplicationStatus.INTERVIEW_1);
-                app.advanceStatus(ApplicationStatus.INTERVIEW_2);
-                break;
-            case FINAL:
-                app.advanceStatus(ApplicationStatus.RESUME_PASSED);
-                app.advanceStatus(ApplicationStatus.INTERVIEW_1);
-                app.advanceStatus(ApplicationStatus.FINAL);
-                break;
-            default:
-                throw new IllegalArgumentException("Unexpected status: " + fromStatus);
+        if (fromStatus == ApplicationStatus.INTERVIEW) {
+            app.advanceStatus(ApplicationStatus.INTERVIEW);
         }
 
         app.advanceStatus(ApplicationStatus.REJECTED);
@@ -82,10 +69,7 @@ class ApplicationTest {
     static Stream<ApplicationStatus> allInProgressStatuses() {
         return Stream.of(
             ApplicationStatus.RESUME_SUBMITTED,
-            ApplicationStatus.RESUME_PASSED,
-            ApplicationStatus.INTERVIEW_1,
-            ApplicationStatus.INTERVIEW_2,
-            ApplicationStatus.FINAL
+            ApplicationStatus.INTERVIEW
         );
     }
 }

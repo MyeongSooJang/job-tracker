@@ -49,13 +49,24 @@ class ApplicationControllerTest {
     @Test
     void PATCH_applications_status_상태를_전이한다() throws Exception {
         Application app = sampleApplication();
-        app.advanceStatus(ApplicationStatus.RESUME_PASSED);
+        app.advanceStatus(ApplicationStatus.INTERVIEW);
         given(applicationService.advanceStatus(eq(1L), any())).willReturn(app);
 
         mockMvc.perform(patch("/api/applications/1/status")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(Map.of("status", "RESUME_PASSED"))))
+                        .content(objectMapper.writeValueAsString(Map.of("status", "INTERVIEW"))))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value("RESUME_PASSED"));
+                .andExpect(jsonPath("$.status").value("INTERVIEW"));
+    }
+
+    @Test
+    void GET_applications_status로_면접_단계_지원_건만_조회한다() throws Exception {
+        Application app = sampleApplication();
+        app.advanceStatus(ApplicationStatus.INTERVIEW);
+        given(applicationService.findByStatus(ApplicationStatus.INTERVIEW)).willReturn(java.util.List.of(app));
+
+        mockMvc.perform(get("/api/applications").param("status", "INTERVIEW"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].status").value("INTERVIEW"));
     }
 }

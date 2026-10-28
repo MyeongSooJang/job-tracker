@@ -20,6 +20,7 @@ import java.util.Map;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -44,5 +45,28 @@ class InterviewControllerTest {
                                         "location", "판교", "note", "1차 면접"))))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.round").value(1));
+    }
+
+    @Test
+    void PATCH_score_면접_점수를_매긴다() throws Exception {
+        Company company = Company.create(1L, "카카오", "IT", "https://kakao.com");
+        Application app = Application.create(1L, company, "백엔드 개발자", LocalDate.now());
+        Interview interview = Interview.create(app, 1, LocalDateTime.now(), "판교", "1차 면접");
+        interview.evaluate(85);
+        given(interviewService.evaluate(eq(1L), eq(1L), any())).willReturn(interview);
+
+        mockMvc.perform(patch("/api/applications/1/interviews/1/score")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of("score", 85))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.score").value(85));
+    }
+
+    @Test
+    void PATCH_score_100점을_초과하면_400을_반환한다() throws Exception {
+        mockMvc.perform(patch("/api/applications/1/interviews/1/score")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of("score", 101))))
+                .andExpect(status().isBadRequest());
     }
 }

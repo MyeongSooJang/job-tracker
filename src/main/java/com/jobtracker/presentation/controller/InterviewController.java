@@ -4,6 +4,7 @@ import com.jobtracker.application.service.InterviewService;
 import com.jobtracker.domain.interview.Interview;
 import com.jobtracker.application.service.dto.InterviewQuestionRequest;
 import com.jobtracker.application.service.dto.InterviewRequest;
+import com.jobtracker.application.service.dto.InterviewScoreRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -28,6 +29,13 @@ public class InterviewController {
     @GetMapping
     public List<Interview> findAll(@PathVariable Long applicationId) {
         return interviewService.findByApplicationId(applicationId);
+    }
+
+    @PatchMapping("/{interviewId}/score")
+    public Interview evaluate(@PathVariable Long applicationId,
+                              @PathVariable Long interviewId,
+                              @RequestBody @Valid InterviewScoreRequest request) {
+        return interviewService.evaluate(applicationId, interviewId, request);
     }
 
     @PostMapping("/{interviewId}/questions")

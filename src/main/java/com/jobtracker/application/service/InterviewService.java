@@ -7,6 +7,7 @@ import com.jobtracker.global.exception.BusinessException;
 import com.jobtracker.global.exception.ErrorCode;
 import com.jobtracker.application.service.dto.InterviewQuestionRequest;
 import com.jobtracker.application.service.dto.InterviewRequest;
+import com.jobtracker.application.service.dto.InterviewScoreRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,10 +25,17 @@ public class InterviewService {
     @Transactional
     public Interview register(Long applicationId, InterviewRequest request) {
         Application application = applicationService.findById(applicationId);
-        return interviewRepository.save(
-                Interview.create(application, request.round(), request.interviewDate(),
-                        request.location(), request.note())
-        );
+        Interview interview = Interview.create(application, request.round(), request.interviewDate(),
+                request.location(), request.note());
+        interview.evaluate(request.score());
+        return interviewRepository.save(interview);
+    }
+
+    @Transactional
+    public Interview evaluate(Long applicationId, Long interviewId, InterviewScoreRequest request) {
+        Interview interview = findInterview(applicationId, interviewId);
+        interview.evaluate(request.score());
+        return interview;
     }
 
     public List<Interview> findByApplicationId(Long applicationId) {
@@ -36,12 +44,17 @@ public class InterviewService {
 
     @Transactional
     public Interview addQuestion(Long applicationId, Long interviewId, InterviewQuestionRequest request) {
+        Interview interview = findInterview(applicationId, interviewId);
+        interview.addQuestion(request.question(), request.answer(), request.memo());
+        return interview;
+    }
+
+    private Interview findInterview(Long applicationId, Long interviewId) {
         Interview interview = interviewRepository.findById(interviewId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.INTERVIEW_NOT_FOUND));
         if (!interview.getApplication().getId().equals(applicationId)) {
             throw new BusinessException(ErrorCode.INTERVIEW_NOT_FOUND);
         }
-        interview.addQuestion(request.question(), request.answer(), request.memo());
         return interview;
     }
 }

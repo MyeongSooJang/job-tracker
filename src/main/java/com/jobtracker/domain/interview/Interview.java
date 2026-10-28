@@ -37,6 +37,8 @@ public class Interview {
     @Column(columnDefinition = "TEXT")
     private String note;
 
+    private Integer score;
+
     @OneToMany(mappedBy = "interview", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<InterviewQuestion> questions = new ArrayList<>();
 
@@ -53,6 +55,10 @@ public class Interview {
         interview.location = location;
         interview.note = note;
         return interview;
+    }
+
+    public void evaluate(Integer score) {
+        this.score = score;
     }
 
     public void addQuestion(String question, String answer, String memo) {

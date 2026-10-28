@@ -4,6 +4,7 @@ import com.jobtracker.application.service.dto.ApplicationRequest;
 import com.jobtracker.application.service.dto.ApplicationStatusRequest;
 import com.jobtracker.domain.application.Application;
 import com.jobtracker.domain.application.ApplicationRepository;
+import com.jobtracker.domain.application.ApplicationStatus;
 import com.jobtracker.domain.company.Company;
 import com.jobtracker.global.exception.BusinessException;
 import com.jobtracker.global.exception.ErrorCode;
@@ -32,6 +33,10 @@ public class ApplicationService {
 
     public List<Application> findAll() {
         return applicationRepository.findAll();
+    }
+
+    public List<Application> findByStatus(ApplicationStatus status) {
+        return applicationRepository.findByStatus(status);
     }
 
     public Application findById(Long id) {

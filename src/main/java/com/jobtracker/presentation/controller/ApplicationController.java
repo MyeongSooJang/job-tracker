@@ -4,6 +4,7 @@ import com.jobtracker.application.service.ApplicationService;
 import com.jobtracker.application.service.dto.ApplicationRequest;
 import com.jobtracker.application.service.dto.ApplicationStatusRequest;
 import com.jobtracker.domain.application.Application;
+import com.jobtracker.domain.application.ApplicationStatus;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -25,8 +26,8 @@ public class ApplicationController {
     }
 
     @GetMapping
-    public List<Application> findAll() {
-        return applicationService.findAll();
+    public List<Application> findAll(@RequestParam(required = false) ApplicationStatus status) {
+        return status == null ? applicationService.findAll() : applicationService.findByStatus(status);
     }
 
     @GetMapping("/{id}")

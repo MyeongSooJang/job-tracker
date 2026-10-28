@@ -24,7 +24,7 @@ public class ScheduleService {
         Application application = applicationService.findById(request.applicationId());
         return scheduleRepository.save(
                 Schedule.create(application, request.title(), request.scheduledAt(),
-                        request.type(), request.note())
+                        request.type(), request.address(), request.note())
         );
     }
 

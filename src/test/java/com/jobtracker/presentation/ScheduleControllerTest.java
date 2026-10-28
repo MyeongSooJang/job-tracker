@@ -35,7 +35,7 @@ class ScheduleControllerTest {
     void POST_schedules_일정을_등록한다() throws Exception {
         Company company = Company.create(1L, "카카오", "IT", "https://kakao.com");
         Application app = Application.create(1L, company, "백엔드 개발자", LocalDate.now());
-        Schedule schedule = Schedule.create(app, "1차 면접", LocalDateTime.now(), ScheduleType.INTERVIEW, "");
+        Schedule schedule = Schedule.create(app, "1차 면접", LocalDateTime.now(), ScheduleType.INTERVIEW, "경기도 성남시 판교역로 166", "");
         given(scheduleService.register(any())).willReturn(schedule);
 
         mockMvc.perform(post("/api/schedules")
@@ -44,9 +44,11 @@ class ScheduleControllerTest {
                                 "applicationId", 1,
                                 "title", "1차 면접",
                                 "scheduledAt", LocalDateTime.now().toString(),
-                                "type", "INTERVIEW"))))
+                                "type", "INTERVIEW",
+                                "address", "경기도 성남시 판교역로 166"))))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.title").value("1차 면접"));
+                .andExpect(jsonPath("$.title").value("1차 면접"))
+                .andExpect(jsonPath("$.address").value("경기도 성남시 판교역로 166"));
     }
 
     @Test

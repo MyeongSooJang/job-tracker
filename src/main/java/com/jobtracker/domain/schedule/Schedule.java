@@ -35,6 +35,8 @@ public class Schedule {
     @Column(nullable = false)
     private ScheduleType type;
 
+    private String address;
+
     private String note;
 
     @CreatedDate
@@ -42,12 +44,13 @@ public class Schedule {
     private LocalDateTime createdAt;
 
     public static Schedule create(Application application, String title,
-                                  LocalDateTime scheduledAt, ScheduleType type, String note) {
+                                  LocalDateTime scheduledAt, ScheduleType type, String address, String note) {
         Schedule schedule = new Schedule();
         schedule.application = application;
         schedule.title = title;
         schedule.scheduledAt = scheduledAt;
         schedule.type = type;
+        schedule.address = address;
         schedule.note = note;
         return schedule;
     }

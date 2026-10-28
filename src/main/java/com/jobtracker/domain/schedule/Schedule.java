@@ -43,6 +43,10 @@ public class Schedule {
     @Column(updatable = false)
     private LocalDateTime createdAt;
 
+    public void changeAddress(String address) {
+        this.address = address;
+    }
+
     public static Schedule create(Application application, String title,
                                   LocalDateTime scheduledAt, ScheduleType type, String address, String note) {
         Schedule schedule = new Schedule();

@@ -10,6 +10,6 @@ public record ScheduleRequest(
         @NotBlank String title,
         @NotNull LocalDateTime scheduledAt,
         @NotNull ScheduleType type,
-        String address,
+        @NotBlank String address,
         String note
 ) {}

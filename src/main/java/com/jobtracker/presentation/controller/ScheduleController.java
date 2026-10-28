@@ -2,6 +2,7 @@ package com.jobtracker.presentation.controller;
 
 import com.jobtracker.application.service.ScheduleService;
 import com.jobtracker.domain.schedule.Schedule;
+import com.jobtracker.application.service.dto.ScheduleAddressRequest;
 import com.jobtracker.application.service.dto.ScheduleRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +24,12 @@ public class ScheduleController {
     @ResponseStatus(HttpStatus.CREATED)
     public Schedule register(@RequestBody @Valid ScheduleRequest request) {
         return scheduleService.register(request);
+    }
+
+    @PatchMapping("/{id}/address")
+    public Schedule updateAddress(@PathVariable Long id,
+                                  @RequestBody @Valid ScheduleAddressRequest request) {
+        return scheduleService.updateAddress(id, request);
     }
 
     @GetMapping

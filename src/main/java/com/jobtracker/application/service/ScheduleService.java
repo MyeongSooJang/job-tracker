@@ -3,7 +3,10 @@ package com.jobtracker.application.service;
 import com.jobtracker.domain.application.Application;
 import com.jobtracker.domain.schedule.Schedule;
 import com.jobtracker.domain.schedule.ScheduleRepository;
+import com.jobtracker.application.service.dto.ScheduleAddressRequest;
 import com.jobtracker.application.service.dto.ScheduleRequest;
+import com.jobtracker.global.exception.BusinessException;
+import com.jobtracker.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,6 +29,14 @@ public class ScheduleService {
                 Schedule.create(application, request.title(), request.scheduledAt(),
                         request.type(), request.address(), request.note())
         );
+    }
+
+    @Transactional
+    public Schedule updateAddress(Long id, ScheduleAddressRequest request) {
+        Schedule schedule = scheduleRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(ErrorCode.SCHEDULE_NOT_FOUND));
+        schedule.changeAddress(request.address());
+        return schedule;
     }
 
     public List<Schedule> findAll() {

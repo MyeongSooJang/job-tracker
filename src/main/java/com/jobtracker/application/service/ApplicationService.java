@@ -6,6 +6,8 @@ import com.jobtracker.domain.application.Application;
 import com.jobtracker.domain.application.ApplicationRepository;
 import com.jobtracker.domain.application.ApplicationStatus;
 import com.jobtracker.domain.company.Company;
+import com.jobtracker.domain.review.Review;
+import com.jobtracker.domain.review.ReviewRepository;
 import com.jobtracker.global.exception.BusinessException;
 import com.jobtracker.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +23,7 @@ public class ApplicationService {
 
     private final ApplicationRepository applicationRepository;
     private final CompanyService companyService;
+    private final ReviewRepository reviewRepository;
 
     @Transactional
     public Application register(ApplicationRequest request) {
@@ -48,6 +51,10 @@ public class ApplicationService {
     public Application advanceStatus(Long id, ApplicationStatusRequest request) {
         Application application = findById(id);
         application.advanceStatus(request.status());
+        if (request.status() == ApplicationStatus.INTERVIEW
+                && !reviewRepository.existsByApplicationId(id)) {
+            reviewRepository.save(Review.create(application));
+        }
         return application;
     }
 }

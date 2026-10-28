@@ -4,6 +4,7 @@ import com.jobtracker.application.service.ApplicationService;
 import com.jobtracker.application.service.ScheduleService;
 import com.jobtracker.application.service.dto.ScheduleRequest;
 import com.jobtracker.domain.application.Application;
+import com.jobtracker.domain.application.ApplicationStatus;
 import com.jobtracker.domain.company.Company;
 import com.jobtracker.domain.review.Review;
 import com.jobtracker.domain.review.ReviewRepository;
@@ -19,6 +20,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
@@ -51,6 +53,31 @@ class ScheduleServiceTest {
         scheduleService.register(request(ScheduleType.INTERVIEW));
 
         verify(reviewRepository).save(any(Review.class));
+    }
+
+    @Test
+    void register_면접_일정이_생성되면_서류접수에서_면접_상태로_전환한다() {
+        Company company = Company.create(1L, "카카오", "IT", "https://kakao.com");
+        Application app = Application.create(1L, company, "백엔드 개발자", LocalDate.now());
+        given(applicationService.findById(1L)).willReturn(app);
+        given(scheduleRepository.save(any(Schedule.class))).willAnswer(i -> i.getArgument(0));
+        given(reviewRepository.existsByApplicationId(any())).willReturn(false);
+
+        scheduleService.register(request(ScheduleType.INTERVIEW));
+
+        assertThat(app.getStatus()).isEqualTo(ApplicationStatus.INTERVIEW);
+    }
+
+    @Test
+    void register_면접이_아닌_일정은_상태를_바꾸지_않는다() {
+        Company company = Company.create(1L, "카카오", "IT", "https://kakao.com");
+        Application app = Application.create(1L, company, "백엔드 개발자", LocalDate.now());
+        given(applicationService.findById(1L)).willReturn(app);
+        given(scheduleRepository.save(any(Schedule.class))).willAnswer(i -> i.getArgument(0));
+
+        scheduleService.register(request(ScheduleType.TASK));
+
+        assertThat(app.getStatus()).isEqualTo(ApplicationStatus.RESUME_SUBMITTED);
     }
 
     @Test

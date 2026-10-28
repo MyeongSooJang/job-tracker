@@ -46,6 +46,9 @@ public class ApplicationService {
 
     @Transactional
     public Application advanceStatus(Long id, ApplicationStatusRequest request) {
+        if (request.status() == ApplicationStatus.INTERVIEW) {
+            throw new BusinessException(ErrorCode.INTERVIEW_SCHEDULE_REQUIRED);
+        }
         Application application = findById(id);
         application.advanceStatus(request.status());
         return application;

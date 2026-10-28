@@ -1,6 +1,7 @@
 package com.jobtracker.application.service;
 
 import com.jobtracker.domain.application.Application;
+import com.jobtracker.domain.application.ApplicationStatus;
 import com.jobtracker.domain.review.Review;
 import com.jobtracker.domain.review.ReviewRepository;
 import com.jobtracker.domain.schedule.Schedule;
@@ -33,6 +34,10 @@ public class ScheduleService {
                 Schedule.create(application, request.title(), request.scheduledAt(),
                         request.type(), request.address(), request.note())
         );
+        if (request.type() == ScheduleType.INTERVIEW
+                && application.getStatus() == ApplicationStatus.RESUME_SUBMITTED) {
+            application.advanceStatus(ApplicationStatus.INTERVIEW);
+        }
         if (request.type() == ScheduleType.INTERVIEW
                 && !reviewRepository.existsByApplicationId(application.getId())) {
             reviewRepository.save(Review.create(application));

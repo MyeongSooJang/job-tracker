@@ -7,16 +7,30 @@ description: Use when creating git commits, branches, or pull requests ("커밋�
 
 Conventional Commits 기반. 모든 메시지와 PR 본문은 한국어로 작성한다.
 
+## 협업 모드
+
+**현재 모드: `solo`** (팀으로 전환하면 이 값을 `team`으로 바꾼다)
+
+| | solo (혼자 개발) | team (팀 개발) |
+|---|---|---|
+| main 직접 커밋/푸시 | 허용 | 금지 |
+| 작업 방식 | 작은 변경은 main 직접, 큰 기능은 브랜치 + PR | 항상 브랜치 + PR |
+| 리뷰 없이 머지 | 허용 | 금지 (리뷰어 승인 필요) |
+
+- team 모드의 "머지 금지"는 이 문서의 지침일 뿐이다. 실제 강제는 GitHub 브랜치 보호 규칙(Require a pull request before merging, 승인 1명 이상)으로 건다. team으로 전환할 때 함께 설정한다.
+- team 모드에서 승인이 없으면 머지하지 않고 사용자에게 알린다.
+- solo 모드여도 큰 기능은 브랜치 + PR로 진행하는 것을 권장한다 (히스토리 정리, 변경 이유 기록).
+
 ## 작업 흐름
 
 ```
-main에서 브랜치 생성 → 커밋 → PR 생성 → 리뷰/검증 → main에 머지 → 브랜치 삭제
+main에서 브랜치 생성 → 커밋 → PR 생성 → 검증(team은 리뷰 승인) → main에 머지 → 브랜치 삭제
 ```
 
-- 새 기능/수정은 항상 `main`에서 브랜치를 따서 시작한다. `main`에 직접 커밋하지 않는다.
+- 브랜치 + PR로 진행할 때는 항상 `main`에서 브랜치를 따서 시작한다.
 - 한 브랜치 = 한 목적. PR이 커지면(대략 400줄 초과) 쪼갤 수 있는지 먼저 검토한다.
 - 머지는 **squash merge**를 기본으로 한다. (main 히스토리가 PR 단위로 정리됨. 다른 방식이 필요하면 사용자가 지시한다.)
-- 머지 후 작업 브랜치를 삭제한다.
+- 머지 후 작업 브랜치를 삭제한다 (`gh pr merge --squash --delete-branch`).
 
 ## 브랜치 이름
 
@@ -171,3 +185,4 @@ fix: CORS에 Vercel 도메인 추가
 1. PR이 `main` 대상이고 충돌이 없는가 (`mergeable`)
 2. 테스트 계획의 항목이 실제로 확인되었는가
 3. CI 체크가 설정되어 있다면 통과했는가
+4. team 모드: 리뷰어 승인(`reviewDecision`이 `APPROVED`)이 있는가

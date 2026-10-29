@@ -1,0 +1,24 @@
+server:
+  port: ${PORT:8080}
+
+spring:
+  datasource:
+    url: jdbc:postgresql://${PGHOST:localhost}:${PGPORT:5432}/${PGDATABASE:jobtracker}
+    username: ${PGUSER:${DB_USERNAME:postgres}}
+    password: ${PGPASSWORD:${DB_PASSWORD:postgres}}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+  data:
+    jpa:
+      repositories:
+        bootstrap-mode: deferred
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html

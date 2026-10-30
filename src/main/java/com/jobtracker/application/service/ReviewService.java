@@ -26,7 +26,7 @@ public class ReviewService {
     public Review write(Long id, ReviewRequest request) {
         Review review = reviewRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.REVIEW_NOT_FOUND));
-        review.write(request.content());
+        review.write(request.content(), request.rating());
         return review;
     }
 }

@@ -31,7 +31,7 @@ class CompanyControllerTest {
 
     @Test
     void POST_companies_회사를_등록한다() throws Exception {
-        Company company = Company.create(1L, "카카오", "IT", "https://kakao.com");
+        Company company = Company.create("카카오", "IT", "https://kakao.com");
         given(companyService.register(any())).willReturn(company);
 
         mockMvc.perform(post("/api/companies")
@@ -44,7 +44,7 @@ class CompanyControllerTest {
 
     @Test
     void GET_companies_회사_목록을_조회한다() throws Exception {
-        Company company = Company.create(1L, "카카오", "IT", "https://kakao.com");
+        Company company = Company.create("카카오", "IT", "https://kakao.com");
         given(companyService.findAll()).willReturn(List.of(company));
 
         mockMvc.perform(get("/api/companies"))
@@ -54,7 +54,7 @@ class CompanyControllerTest {
 
     @Test
     void GET_companies_id_회사를_단건_조회한다() throws Exception {
-        Company company = Company.create(1L, "카카오", "IT", "https://kakao.com");
+        Company company = Company.create("카카오", "IT", "https://kakao.com");
         given(companyService.findById(1L)).willReturn(company);
 
         mockMvc.perform(get("/api/companies/1"))

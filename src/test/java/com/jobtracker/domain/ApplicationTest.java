@@ -17,7 +17,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class ApplicationTest {
 
     private Company company() {
-        return Company.create(1L, "카카오", "IT", "https://kakao.com");
+        return Company.create("카카오", "IT", "https://kakao.com");
     }
 
     @Test

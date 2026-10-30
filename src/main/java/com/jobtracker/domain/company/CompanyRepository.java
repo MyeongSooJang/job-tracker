@@ -7,4 +7,5 @@ public interface CompanyRepository {
     Company save(Company company);
     Optional<Company> findById(Long id);
     List<Company> findAll();
+    boolean existsByName(String name);
 }

@@ -34,11 +34,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 주의사항
 
-- 연관관계가 LAZY라서 컨트롤러/DTO 변환 시점에 `LazyInitializationException`이 발생할 수 있다 (최근 수정 이력: `ce2bdd4`). 서비스 트랜잭션 안에서 필요한 연관을 초기화할 것.
+- 연관관계가 LAZY라서 컨트롤러/DTO 변환 시점에 `LazyInitializationException`이 발생할 수 있다. 서비스 트랜잭션 안에서 필요한 연관을 초기화할 것.
 - CORS 허용 origin은 `CorsConfig`에 하드코딩되어 있다 (localhost:5173, `*.vercel.app`, 프론트엔드 Vercel 도메인). 프론트 도메인이 바뀌면 여기를 수정.
 - 테스트는 `@WebMvcTest` + `@MockBean` 서비스 방식의 컨트롤러 테스트와 순수 도메인 단위 테스트로 구성된다. `src/main/resources/application-test.yml`(H2, PostgreSQL 모드)이 있으나 현재 `@SpringBootTest`/`@ActiveProfiles`로 쓰이는 테스트는 없다.
 
 ## 작업 규칙
 
-- 기능 하나가 끝나고 `./gradlew test`가 통과하면 별도 확인 없이 커밋하고 현재 브랜치로 push한다. 커밋 메시지는 기존 이력처럼 `feat:`/`fix:` 접두사 + 한글로 작성한다. 테스트가 실패하면 커밋/push하지 않는다.
+- 새 작업은 main에서 브랜치를 따서 진행한다. 기능 하나가 끝나고 `./gradlew test`가 통과하면 별도 확인 없이 커밋하고 그 브랜치를 push한 뒤 PR을 만든다. 머지는 사용자가 지시할 때 `gh pr merge --squash --delete-branch`로 한다. main 직접 커밋/push는 전역 훅(`~/.claude/hooks/git-guard.py`)이 차단한다. 커밋 메시지는 기존 이력처럼 `feat:`/`fix:` 접두사 + 한글로 작성한다. 테스트가 실패하면 커밋/push하지 않는다.
 - 커밋 메시지에 `Co-Authored-By` 등 Claude 관련 attribution 줄을 넣지 않는다.

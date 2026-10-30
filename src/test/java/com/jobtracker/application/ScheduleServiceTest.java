@@ -39,7 +39,7 @@ class ScheduleServiceTest {
     }
 
     private void givenSavedSchedule() {
-        Company company = Company.create(1L, "카카오", "IT", "https://kakao.com");
+        Company company = Company.create("카카오", "IT", "https://kakao.com");
         Application app = Application.create(1L, company, "백엔드 개발자", LocalDate.now());
         given(applicationService.findById(1L)).willReturn(app);
         given(scheduleRepository.save(any(Schedule.class))).willAnswer(i -> i.getArgument(0));
@@ -57,7 +57,7 @@ class ScheduleServiceTest {
 
     @Test
     void register_면접_일정이_생성되면_서류접수에서_면접_상태로_전환한다() {
-        Company company = Company.create(1L, "카카오", "IT", "https://kakao.com");
+        Company company = Company.create("카카오", "IT", "https://kakao.com");
         Application app = Application.create(1L, company, "백엔드 개발자", LocalDate.now());
         given(applicationService.findById(1L)).willReturn(app);
         given(scheduleRepository.save(any(Schedule.class))).willAnswer(i -> i.getArgument(0));
@@ -70,7 +70,7 @@ class ScheduleServiceTest {
 
     @Test
     void register_면접이_아닌_일정은_상태를_바꾸지_않는다() {
-        Company company = Company.create(1L, "카카오", "IT", "https://kakao.com");
+        Company company = Company.create("카카오", "IT", "https://kakao.com");
         Application app = Application.create(1L, company, "백엔드 개발자", LocalDate.now());
         given(applicationService.findById(1L)).willReturn(app);
         given(scheduleRepository.save(any(Schedule.class))).willAnswer(i -> i.getArgument(0));

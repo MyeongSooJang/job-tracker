@@ -29,7 +29,7 @@ class ApplicationServiceTest {
     @InjectMocks ApplicationService applicationService;
 
     private Application application() {
-        Company company = Company.create(1L, "카카오", "IT", "https://kakao.com");
+        Company company = Company.create("카카오", "IT", "https://kakao.com");
         return Application.create(1L, company, "백엔드 개발자", LocalDate.now());
     }
 

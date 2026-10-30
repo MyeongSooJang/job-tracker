@@ -33,7 +33,7 @@ class InterviewControllerTest {
 
     @Test
     void POST_interviews_면접을_등록한다() throws Exception {
-        Company company = Company.create(1L, "카카오", "IT", "https://kakao.com");
+        Company company = Company.create("카카오", "IT", "https://kakao.com");
         Application app = Application.create(1L, company, "백엔드 개발자", LocalDate.now());
         Interview interview = Interview.create(app, 1, LocalDateTime.now(), "판교", "1차 면접");
         given(interviewService.register(eq(1L), any())).willReturn(interview);
@@ -49,7 +49,7 @@ class InterviewControllerTest {
 
     @Test
     void PATCH_score_면접_점수를_매긴다() throws Exception {
-        Company company = Company.create(1L, "카카오", "IT", "https://kakao.com");
+        Company company = Company.create("카카오", "IT", "https://kakao.com");
         Application app = Application.create(1L, company, "백엔드 개발자", LocalDate.now());
         Interview interview = Interview.create(app, 1, LocalDateTime.now(), "판교", "1차 면접");
         interview.evaluate(85);

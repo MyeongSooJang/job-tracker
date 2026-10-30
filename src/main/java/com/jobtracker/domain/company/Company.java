@@ -21,9 +21,7 @@ public class Company {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private Long userId;
-
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private String name;
 
     private String industry;
@@ -37,9 +35,8 @@ public class Company {
     @LastModifiedDate
     private LocalDateTime updatedAt;
 
-    public static Company create(Long userId, String name, String industry, String website) {
+    public static Company create(String name, String industry, String website) {
         Company company = new Company();
-        company.userId = userId;
         company.name = name;
         company.industry = industry;
         company.website = website;

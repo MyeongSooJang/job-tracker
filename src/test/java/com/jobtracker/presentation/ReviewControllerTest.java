@@ -32,7 +32,7 @@ class ReviewControllerTest {
     @MockBean ReviewService reviewService;
 
     private Review review() {
-        Company company = Company.create(1L, "카카오", "IT", "https://kakao.com");
+        Company company = Company.create("카카오", "IT", "https://kakao.com");
         Application app = Application.create(1L, company, "백엔드 개발자", LocalDate.now());
         return Review.create(app);
     }
@@ -49,21 +49,30 @@ class ReviewControllerTest {
     @Test
     void PATCH_reviews_후기를_작성한다() throws Exception {
         Review review = review();
-        review.write("분위기가 좋았다");
+        review.write("분위기가 좋았다", 4);
         given(reviewService.write(eq(1L), any())).willReturn(review);
 
         mockMvc.perform(patch("/api/reviews/1")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(Map.of("content", "분위기가 좋았다"))))
+                        .content(objectMapper.writeValueAsString(Map.of("content", "분위기가 좋았다", "rating", 4))))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content").value("분위기가 좋았다"));
+                .andExpect(jsonPath("$.content").value("분위기가 좋았다"))
+                .andExpect(jsonPath("$.rating").value(4));
     }
 
     @Test
     void PATCH_reviews_내용이_비어있으면_400을_반환한다() throws Exception {
         mockMvc.perform(patch("/api/reviews/1")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(Map.of("content", ""))))
+                        .content(objectMapper.writeValueAsString(Map.of("content", "", "rating", 4))))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void PATCH_reviews_평점이_범위를_벗어나면_400을_반환한다() throws Exception {
+        mockMvc.perform(patch("/api/reviews/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of("content", "좋았다", "rating", 6))))
                 .andExpect(status().isBadRequest());
     }
 }

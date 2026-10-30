@@ -20,9 +20,11 @@ public class CompanyService {
 
     @Transactional
     public Company register(CompanyRequest request) {
-        // TODO: replace with authenticated userId when JWT auth is added
+        if (companyRepository.existsByName(request.name())) {
+            throw new BusinessException(ErrorCode.COMPANY_ALREADY_EXISTS);
+        }
         return companyRepository.save(
-                Company.create(1L, request.name(), request.industry(), request.website())
+                Company.create(request.name(), request.industry(), request.website())
         );
     }
 

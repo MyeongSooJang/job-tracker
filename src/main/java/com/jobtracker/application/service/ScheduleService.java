@@ -28,8 +28,8 @@ public class ScheduleService {
     private final ReviewRepository reviewRepository;
 
     @Transactional
-    public Schedule register(ScheduleRequest request) {
-        Application application = applicationService.findById(request.applicationId());
+    public Schedule register(Long userId, ScheduleRequest request) {
+        Application application = applicationService.findById(userId, request.applicationId());
         Schedule schedule = scheduleRepository.save(
                 Schedule.create(application, request.title(), request.scheduledAt(),
                         request.type(), request.address(), request.note())
@@ -46,18 +46,19 @@ public class ScheduleService {
     }
 
     @Transactional
-    public Schedule updateAddress(Long id, ScheduleAddressRequest request) {
+    public Schedule updateAddress(Long userId, Long id, ScheduleAddressRequest request) {
         Schedule schedule = scheduleRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.SCHEDULE_NOT_FOUND));
+        schedule.verifyOwner(userId);
         schedule.changeAddress(request.address());
         return schedule;
     }
 
-    public List<Schedule> findAll() {
-        return scheduleRepository.findAll();
+    public List<Schedule> findAll(Long userId) {
+        return scheduleRepository.findByApplicationUserId(userId);
     }
 
-    public List<Schedule> findByPeriod(LocalDateTime from, LocalDateTime to) {
-        return scheduleRepository.findByScheduledAtBetween(from, to);
+    public List<Schedule> findByPeriod(Long userId, LocalDateTime from, LocalDateTime to) {
+        return scheduleRepository.findByApplicationUserIdAndScheduledAtBetween(userId, from, to);
     }
 }

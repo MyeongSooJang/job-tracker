@@ -18,14 +18,15 @@ public class ReviewService {
 
     private final ReviewRepository reviewRepository;
 
-    public List<Review> findAll() {
-        return reviewRepository.findAll();
+    public List<Review> findAll(Long userId) {
+        return reviewRepository.findByApplicationUserId(userId);
     }
 
     @Transactional
-    public Review write(Long id, ReviewRequest request) {
+    public Review write(Long userId, Long id, ReviewRequest request) {
         Review review = reviewRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.REVIEW_NOT_FOUND));
+        review.verifyOwner(userId);
         review.write(request.content(), request.rating());
         return review;
     }

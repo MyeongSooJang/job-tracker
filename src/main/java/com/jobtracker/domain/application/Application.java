@@ -13,6 +13,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 @Entity
 @Table(name = "applications")
@@ -55,6 +56,16 @@ public class Application {
         application.status = ApplicationStatus.RESUME_SUBMITTED;
         application.appliedDate = appliedDate;
         return application;
+    }
+
+    public boolean isOwnedBy(Long userId) {
+        return Objects.equals(this.userId, userId);
+    }
+
+    public void verifyOwner(Long userId) {
+        if (!isOwnedBy(userId)) {
+            throw new BusinessException(ErrorCode.APPLICATION_NOT_FOUND);
+        }
     }
 
     public void advanceStatus(ApplicationStatus next) {

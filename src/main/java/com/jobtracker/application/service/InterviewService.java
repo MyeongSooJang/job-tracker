@@ -23,8 +23,8 @@ public class InterviewService {
     private final ApplicationService applicationService;
 
     @Transactional
-    public Interview register(Long applicationId, InterviewRequest request) {
-        Application application = applicationService.findById(applicationId);
+    public Interview register(Long userId, Long applicationId, InterviewRequest request) {
+        Application application = applicationService.findById(userId, applicationId);
         Interview interview = Interview.create(application, request.round(), request.interviewDate(),
                 request.location(), request.note());
         interview.evaluate(request.score());
@@ -32,24 +32,26 @@ public class InterviewService {
     }
 
     @Transactional
-    public Interview evaluate(Long applicationId, Long interviewId, InterviewScoreRequest request) {
-        Interview interview = findInterview(applicationId, interviewId);
+    public Interview evaluate(Long userId, Long applicationId, Long interviewId, InterviewScoreRequest request) {
+        Interview interview = findInterview(userId, applicationId, interviewId);
         interview.evaluate(request.score());
         return interview;
     }
 
-    public List<Interview> findByApplicationId(Long applicationId) {
+    public List<Interview> findByApplicationId(Long userId, Long applicationId) {
+        applicationService.findById(userId, applicationId);
         return interviewRepository.findByApplicationId(applicationId);
     }
 
     @Transactional
-    public Interview addQuestion(Long applicationId, Long interviewId, InterviewQuestionRequest request) {
-        Interview interview = findInterview(applicationId, interviewId);
+    public Interview addQuestion(Long userId, Long applicationId, Long interviewId, InterviewQuestionRequest request) {
+        Interview interview = findInterview(userId, applicationId, interviewId);
         interview.addQuestion(request.question(), request.answer(), request.memo());
         return interview;
     }
 
-    private Interview findInterview(Long applicationId, Long interviewId) {
+    private Interview findInterview(Long userId, Long applicationId, Long interviewId) {
+        applicationService.findById(userId, applicationId);
         Interview interview = interviewRepository.findById(interviewId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.INTERVIEW_NOT_FOUND));
         if (!interview.getApplication().getId().equals(applicationId)) {

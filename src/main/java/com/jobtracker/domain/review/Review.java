@@ -49,6 +49,12 @@ public class Review {
         return review;
     }
 
+    public void verifyOwner(Long userId) {
+        if (!application.isOwnedBy(userId)) {
+            throw new BusinessException(ErrorCode.REVIEW_NOT_FOUND);
+        }
+    }
+
     public void write(String content, int rating) {
         if (rating < MIN_RATING || rating > MAX_RATING) {
             throw new BusinessException(ErrorCode.INVALID_RATING);

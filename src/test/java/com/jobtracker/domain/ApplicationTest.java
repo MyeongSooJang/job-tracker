@@ -72,4 +72,19 @@ class ApplicationTest {
             ApplicationStatus.INTERVIEW
         );
     }
+
+    @Test
+    void isOwnedBy_소유자만_true를_반환한다() {
+        Application app = Application.create(1L, company(), "백엔드 개발자", LocalDate.now());
+
+        assertThat(app.isOwnedBy(1L)).isTrue();
+        assertThat(app.isOwnedBy(2L)).isFalse();
+    }
+
+    @Test
+    void verifyOwner_소유자가_아니면_예외가_발생한다() {
+        Application app = Application.create(1L, company(), "백엔드 개발자", LocalDate.now());
+
+        assertThatThrownBy(() -> app.verifyOwner(2L)).isInstanceOf(BusinessException.class);
+    }
 }

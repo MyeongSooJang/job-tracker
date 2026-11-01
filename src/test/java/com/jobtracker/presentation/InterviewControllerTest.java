@@ -6,6 +6,7 @@ import com.jobtracker.domain.application.Application;
 import com.jobtracker.domain.company.Company;
 import com.jobtracker.domain.interview.Interview;
 import com.jobtracker.presentation.controller.InterviewController;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -31,19 +32,27 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Import(SecurityConfig.class)
 class InterviewControllerTest {
 
+    private static final String BEARER = "Bearer valid-token";
+
     @Autowired MockMvc mockMvc;
     @MockBean TokenProvider tokenProvider;
     @Autowired ObjectMapper objectMapper;
     @MockBean InterviewService interviewService;
+
+    @BeforeEach
+    void setUp() {
+        given(tokenProvider.parseUserId("valid-token")).willReturn(1L);
+    }
 
     @Test
     void POST_interviews_면접을_등록한다() throws Exception {
         Company company = Company.create("카카오", "IT", "https://kakao.com");
         Application app = Application.create(1L, company, "백엔드 개발자", LocalDate.now());
         Interview interview = Interview.create(app, 1, LocalDateTime.now(), "판교", "1차 면접");
-        given(interviewService.register(eq(1L), any())).willReturn(interview);
+        given(interviewService.register(eq(1L), eq(1L), any())).willReturn(interview);
 
         mockMvc.perform(post("/api/applications/1/interviews")
+                        .header("Authorization", BEARER)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
                                 Map.of("round", 1, "interviewDate", LocalDateTime.now().toString(),
@@ -58,9 +67,10 @@ class InterviewControllerTest {
         Application app = Application.create(1L, company, "백엔드 개발자", LocalDate.now());
         Interview interview = Interview.create(app, 1, LocalDateTime.now(), "판교", "1차 면접");
         interview.evaluate(85);
-        given(interviewService.evaluate(eq(1L), eq(1L), any())).willReturn(interview);
+        given(interviewService.evaluate(eq(1L), eq(1L), eq(1L), any())).willReturn(interview);
 
         mockMvc.perform(patch("/api/applications/1/interviews/1/score")
+                        .header("Authorization", BEARER)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of("score", 85))))
                 .andExpect(status().isOk())
@@ -70,6 +80,7 @@ class InterviewControllerTest {
     @Test
     void PATCH_score_100점을_초과하면_400을_반환한다() throws Exception {
         mockMvc.perform(patch("/api/applications/1/interviews/1/score")
+                        .header("Authorization", BEARER)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of("score", 101))))
                 .andExpect(status().isBadRequest());

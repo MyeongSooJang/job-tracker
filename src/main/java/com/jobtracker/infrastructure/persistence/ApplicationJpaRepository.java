@@ -8,5 +8,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
 public interface ApplicationJpaRepository extends JpaRepository<Application, Long>, ApplicationRepository {
-    List<Application> findByStatus(ApplicationStatus status);
+    List<Application> findByUserId(Long userId);
+
+    List<Application> findByUserIdAndStatus(Long userId, ApplicationStatus status);
 }

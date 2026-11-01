@@ -23,33 +23,34 @@ public class ApplicationService {
     private final CompanyService companyService;
 
     @Transactional
-    public Application register(ApplicationRequest request) {
+    public Application register(Long userId, ApplicationRequest request) {
         Company company = companyService.findById(request.companyId());
-        // TODO: replace with authenticated userId when JWT auth is added
         return applicationRepository.save(
-                Application.create(1L, company, request.position(), request.appliedDate())
+                Application.create(userId, company, request.position(), request.appliedDate())
         );
     }
 
-    public List<Application> findAll() {
-        return applicationRepository.findAll();
+    public List<Application> findAll(Long userId) {
+        return applicationRepository.findByUserId(userId);
     }
 
-    public List<Application> findByStatus(ApplicationStatus status) {
-        return applicationRepository.findByStatus(status);
+    public List<Application> findByStatus(Long userId, ApplicationStatus status) {
+        return applicationRepository.findByUserIdAndStatus(userId, status);
     }
 
-    public Application findById(Long id) {
-        return applicationRepository.findById(id)
+    public Application findById(Long userId, Long id) {
+        Application application = applicationRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.APPLICATION_NOT_FOUND));
+        application.verifyOwner(userId);
+        return application;
     }
 
     @Transactional
-    public Application advanceStatus(Long id, ApplicationStatusRequest request) {
+    public Application advanceStatus(Long userId, Long id, ApplicationStatusRequest request) {
         if (request.status() == ApplicationStatus.INTERVIEW) {
             throw new BusinessException(ErrorCode.INTERVIEW_SCHEDULE_REQUIRED);
         }
-        Application application = findById(id);
+        Application application = findById(userId, id);
         application.advanceStatus(request.status());
         return application;
     }

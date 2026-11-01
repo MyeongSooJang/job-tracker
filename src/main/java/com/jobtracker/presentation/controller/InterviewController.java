@@ -8,6 +8,7 @@ import com.jobtracker.application.service.dto.InterviewScoreRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -21,28 +22,31 @@ public class InterviewController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public Interview register(@PathVariable Long applicationId,
+    public Interview register(@AuthenticationPrincipal Long userId,
+                              @PathVariable Long applicationId,
                               @RequestBody @Valid InterviewRequest request) {
-        return interviewService.register(applicationId, request);
+        return interviewService.register(userId, applicationId, request);
     }
 
     @GetMapping
-    public List<Interview> findAll(@PathVariable Long applicationId) {
-        return interviewService.findByApplicationId(applicationId);
+    public List<Interview> findAll(@AuthenticationPrincipal Long userId, @PathVariable Long applicationId) {
+        return interviewService.findByApplicationId(userId, applicationId);
     }
 
     @PatchMapping("/{interviewId}/score")
-    public Interview evaluate(@PathVariable Long applicationId,
+    public Interview evaluate(@AuthenticationPrincipal Long userId,
+                              @PathVariable Long applicationId,
                               @PathVariable Long interviewId,
                               @RequestBody @Valid InterviewScoreRequest request) {
-        return interviewService.evaluate(applicationId, interviewId, request);
+        return interviewService.evaluate(userId, applicationId, interviewId, request);
     }
 
     @PostMapping("/{interviewId}/questions")
     @ResponseStatus(HttpStatus.CREATED)
-    public Interview addQuestion(@PathVariable Long applicationId,
+    public Interview addQuestion(@AuthenticationPrincipal Long userId,
+                                 @PathVariable Long applicationId,
                                  @PathVariable Long interviewId,
                                  @RequestBody @Valid InterviewQuestionRequest request) {
-        return interviewService.addQuestion(applicationId, interviewId, request);
+        return interviewService.addQuestion(userId, applicationId, interviewId, request);
     }
 }

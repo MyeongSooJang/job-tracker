@@ -8,6 +8,7 @@ import com.jobtracker.domain.application.ApplicationStatus;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -21,23 +22,28 @@ public class ApplicationController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public Application register(@RequestBody @Valid ApplicationRequest request) {
-        return applicationService.register(request);
+    public Application register(@AuthenticationPrincipal Long userId,
+                               @RequestBody @Valid ApplicationRequest request) {
+        return applicationService.register(userId, request);
     }
 
     @GetMapping
-    public List<Application> findAll(@RequestParam(required = false) ApplicationStatus status) {
-        return status == null ? applicationService.findAll() : applicationService.findByStatus(status);
+    public List<Application> findAll(@AuthenticationPrincipal Long userId,
+                                     @RequestParam(required = false) ApplicationStatus status) {
+        return status == null
+                ? applicationService.findAll(userId)
+                : applicationService.findByStatus(userId, status);
     }
 
     @GetMapping("/{id}")
-    public Application findById(@PathVariable Long id) {
-        return applicationService.findById(id);
+    public Application findById(@AuthenticationPrincipal Long userId, @PathVariable Long id) {
+        return applicationService.findById(userId, id);
     }
 
     @PatchMapping("/{id}/status")
-    public Application advanceStatus(@PathVariable Long id,
+    public Application advanceStatus(@AuthenticationPrincipal Long userId,
+                                     @PathVariable Long id,
                                      @RequestBody @Valid ApplicationStatusRequest request) {
-        return applicationService.advanceStatus(id, request);
+        return applicationService.advanceStatus(userId, id, request);
     }
 }

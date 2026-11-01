@@ -2,6 +2,7 @@ package com.jobtracker.application;
 
 import com.jobtracker.application.service.ApplicationService;
 import com.jobtracker.application.service.ScheduleService;
+import com.jobtracker.application.service.dto.ScheduleAddressRequest;
 import com.jobtracker.application.service.dto.ScheduleRequest;
 import com.jobtracker.domain.application.Application;
 import com.jobtracker.domain.application.ApplicationStatus;
@@ -11,6 +12,7 @@ import com.jobtracker.domain.review.ReviewRepository;
 import com.jobtracker.domain.schedule.Schedule;
 import com.jobtracker.domain.schedule.ScheduleRepository;
 import com.jobtracker.domain.schedule.ScheduleType;
+import com.jobtracker.global.exception.BusinessException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -21,6 +23,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
@@ -41,7 +44,7 @@ class ScheduleServiceTest {
     private void givenSavedSchedule() {
         Company company = Company.create("카카오", "IT", "https://kakao.com");
         Application app = Application.create(1L, company, "백엔드 개발자", LocalDate.now());
-        given(applicationService.findById(1L)).willReturn(app);
+        given(applicationService.findById(1L, 1L)).willReturn(app);
         given(scheduleRepository.save(any(Schedule.class))).willAnswer(i -> i.getArgument(0));
     }
 
@@ -50,7 +53,7 @@ class ScheduleServiceTest {
         givenSavedSchedule();
         given(reviewRepository.existsByApplicationId(any())).willReturn(false);
 
-        scheduleService.register(request(ScheduleType.INTERVIEW));
+        scheduleService.register(1L, request(ScheduleType.INTERVIEW));
 
         verify(reviewRepository).save(any(Review.class));
     }
@@ -59,11 +62,11 @@ class ScheduleServiceTest {
     void register_면접_일정이_생성되면_서류접수에서_면접_상태로_전환한다() {
         Company company = Company.create("카카오", "IT", "https://kakao.com");
         Application app = Application.create(1L, company, "백엔드 개발자", LocalDate.now());
-        given(applicationService.findById(1L)).willReturn(app);
+        given(applicationService.findById(1L, 1L)).willReturn(app);
         given(scheduleRepository.save(any(Schedule.class))).willAnswer(i -> i.getArgument(0));
         given(reviewRepository.existsByApplicationId(any())).willReturn(false);
 
-        scheduleService.register(request(ScheduleType.INTERVIEW));
+        scheduleService.register(1L, request(ScheduleType.INTERVIEW));
 
         assertThat(app.getStatus()).isEqualTo(ApplicationStatus.INTERVIEW);
     }
@@ -72,10 +75,10 @@ class ScheduleServiceTest {
     void register_면접이_아닌_일정은_상태를_바꾸지_않는다() {
         Company company = Company.create("카카오", "IT", "https://kakao.com");
         Application app = Application.create(1L, company, "백엔드 개발자", LocalDate.now());
-        given(applicationService.findById(1L)).willReturn(app);
+        given(applicationService.findById(1L, 1L)).willReturn(app);
         given(scheduleRepository.save(any(Schedule.class))).willAnswer(i -> i.getArgument(0));
 
-        scheduleService.register(request(ScheduleType.TASK));
+        scheduleService.register(1L, request(ScheduleType.TASK));
 
         assertThat(app.getStatus()).isEqualTo(ApplicationStatus.RESUME_SUBMITTED);
     }
@@ -85,7 +88,7 @@ class ScheduleServiceTest {
         givenSavedSchedule();
         given(reviewRepository.existsByApplicationId(any())).willReturn(true);
 
-        scheduleService.register(request(ScheduleType.INTERVIEW));
+        scheduleService.register(1L, request(ScheduleType.INTERVIEW));
 
         verify(reviewRepository, never()).save(any(Review.class));
     }
@@ -94,8 +97,20 @@ class ScheduleServiceTest {
     void register_면접이_아닌_일정은_후기를_생성하지_않는다() {
         givenSavedSchedule();
 
-        scheduleService.register(request(ScheduleType.TASK));
+        scheduleService.register(1L, request(ScheduleType.TASK));
 
         verify(reviewRepository, never()).save(any(Review.class));
+    }
+
+    @Test
+    void updateAddress_다른_사용자의_일정은_수정할_수_없다() {
+        Company company = Company.create("카카오", "IT", "https://kakao.com");
+        Application app = Application.create(1L, company, "백엔드 개발자", LocalDate.now());
+        Schedule schedule = Schedule.create(app, "1차 면접", LocalDateTime.now(), ScheduleType.INTERVIEW, "판교", "");
+        given(scheduleRepository.findById(1L)).willReturn(java.util.Optional.of(schedule));
+
+        assertThatThrownBy(() -> scheduleService.updateAddress(2L, 1L, new ScheduleAddressRequest("서울")))
+                .isInstanceOf(BusinessException.class);
+        assertThat(schedule.getAddress()).isEqualTo("판교");
     }
 }

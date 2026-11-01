@@ -1,6 +1,8 @@
 package com.jobtracker.domain.schedule;
 
 import com.jobtracker.domain.application.Application;
+import com.jobtracker.global.exception.BusinessException;
+import com.jobtracker.global.exception.ErrorCode;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -42,6 +44,12 @@ public class Schedule {
     @CreatedDate
     @Column(updatable = false)
     private LocalDateTime createdAt;
+
+    public void verifyOwner(Long userId) {
+        if (!application.isOwnedBy(userId)) {
+            throw new BusinessException(ErrorCode.SCHEDULE_NOT_FOUND);
+        }
+    }
 
     public void changeAddress(String address) {
         this.address = address;

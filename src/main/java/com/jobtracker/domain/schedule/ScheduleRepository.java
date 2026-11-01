@@ -7,6 +7,6 @@ import java.util.Optional;
 public interface ScheduleRepository {
     Schedule save(Schedule schedule);
     Optional<Schedule> findById(Long id);
-    List<Schedule> findAll();
-    List<Schedule> findByScheduledAtBetween(LocalDateTime from, LocalDateTime to);
+    List<Schedule> findByApplicationUserId(Long userId);
+    List<Schedule> findByApplicationUserIdAndScheduledAtBetween(Long userId, LocalDateTime from, LocalDateTime to);
 }

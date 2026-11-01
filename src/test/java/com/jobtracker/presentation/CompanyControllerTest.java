@@ -6,6 +6,7 @@ import com.jobtracker.domain.company.Company;
 import com.jobtracker.global.exception.BusinessException;
 import com.jobtracker.global.exception.ErrorCode;
 import com.jobtracker.presentation.controller.CompanyController;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -29,10 +30,17 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Import(SecurityConfig.class)
 class CompanyControllerTest {
 
+    private static final String BEARER = "Bearer valid-token";
+
     @Autowired MockMvc mockMvc;
     @MockBean TokenProvider tokenProvider;
     @Autowired ObjectMapper objectMapper;
     @MockBean CompanyService companyService;
+
+    @BeforeEach
+    void setUp() {
+        given(tokenProvider.parseUserId("valid-token")).willReturn(1L);
+    }
 
     @Test
     void POST_companies_회사를_등록한다() throws Exception {
@@ -40,6 +48,7 @@ class CompanyControllerTest {
         given(companyService.register(any())).willReturn(company);
 
         mockMvc.perform(post("/api/companies")
+                        .header("Authorization", BEARER)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
                                 Map.of("name", "카카오", "industry", "IT", "website", "https://kakao.com"))))
@@ -52,7 +61,8 @@ class CompanyControllerTest {
         Company company = Company.create("카카오", "IT", "https://kakao.com");
         given(companyService.findAll()).willReturn(List.of(company));
 
-        mockMvc.perform(get("/api/companies"))
+        mockMvc.perform(get("/api/companies")
+                        .header("Authorization", BEARER))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].name").value("카카오"));
     }
@@ -62,7 +72,8 @@ class CompanyControllerTest {
         Company company = Company.create("카카오", "IT", "https://kakao.com");
         given(companyService.findById(1L)).willReturn(company);
 
-        mockMvc.perform(get("/api/companies/1"))
+        mockMvc.perform(get("/api/companies/1")
+                        .header("Authorization", BEARER))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("카카오"));
     }
@@ -72,7 +83,8 @@ class CompanyControllerTest {
         given(companyService.findById(1L))
                 .willThrow(new BusinessException(ErrorCode.COMPANY_NOT_FOUND));
 
-        mockMvc.perform(get("/api/companies/1"))
+        mockMvc.perform(get("/api/companies/1")
+                        .header("Authorization", BEARER))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.code").value("COMPANY_NOT_FOUND"));
     }

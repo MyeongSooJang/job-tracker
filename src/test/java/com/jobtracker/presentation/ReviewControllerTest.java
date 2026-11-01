@@ -6,6 +6,7 @@ import com.jobtracker.domain.application.Application;
 import com.jobtracker.domain.company.Company;
 import com.jobtracker.domain.review.Review;
 import com.jobtracker.presentation.controller.ReviewController;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -31,10 +32,17 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Import(SecurityConfig.class)
 class ReviewControllerTest {
 
+    private static final String BEARER = "Bearer valid-token";
+
     @Autowired MockMvc mockMvc;
     @MockBean TokenProvider tokenProvider;
     @Autowired ObjectMapper objectMapper;
     @MockBean ReviewService reviewService;
+
+    @BeforeEach
+    void setUp() {
+        given(tokenProvider.parseUserId("valid-token")).willReturn(1L);
+    }
 
     private Review review() {
         Company company = Company.create("카카오", "IT", "https://kakao.com");
@@ -44,9 +52,10 @@ class ReviewControllerTest {
 
     @Test
     void GET_reviews_후기_목록을_조회한다() throws Exception {
-        given(reviewService.findAll()).willReturn(List.of(review()));
+        given(reviewService.findAll(1L)).willReturn(List.of(review()));
 
-        mockMvc.perform(get("/api/reviews"))
+        mockMvc.perform(get("/api/reviews")
+                        .header("Authorization", BEARER))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].application.position").value("백엔드 개발자"));
     }
@@ -55,9 +64,10 @@ class ReviewControllerTest {
     void PATCH_reviews_후기를_작성한다() throws Exception {
         Review review = review();
         review.write("분위기가 좋았다", 4);
-        given(reviewService.write(eq(1L), any())).willReturn(review);
+        given(reviewService.write(eq(1L), eq(1L), any())).willReturn(review);
 
         mockMvc.perform(patch("/api/reviews/1")
+                        .header("Authorization", BEARER)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of("content", "분위기가 좋았다", "rating", 4))))
                 .andExpect(status().isOk())
@@ -68,6 +78,7 @@ class ReviewControllerTest {
     @Test
     void PATCH_reviews_내용이_비어있으면_400을_반환한다() throws Exception {
         mockMvc.perform(patch("/api/reviews/1")
+                        .header("Authorization", BEARER)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of("content", "", "rating", 4))))
                 .andExpect(status().isBadRequest());
@@ -76,6 +87,7 @@ class ReviewControllerTest {
     @Test
     void PATCH_reviews_평점이_범위를_벗어나면_400을_반환한다() throws Exception {
         mockMvc.perform(patch("/api/reviews/1")
+                        .header("Authorization", BEARER)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of("content", "좋았다", "rating", 6))))
                 .andExpect(status().isBadRequest());

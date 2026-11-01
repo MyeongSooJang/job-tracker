@@ -8,5 +8,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 public interface ScheduleJpaRepository extends JpaRepository<Schedule, Long>, ScheduleRepository {
-    List<Schedule> findByScheduledAtBetween(LocalDateTime from, LocalDateTime to);
+    List<Schedule> findByApplicationUserId(Long userId);
+
+    List<Schedule> findByApplicationUserIdAndScheduledAtBetween(Long userId, LocalDateTime from, LocalDateTime to);
 }

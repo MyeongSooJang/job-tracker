@@ -6,6 +6,7 @@ import com.jobtracker.domain.application.Application;
 import com.jobtracker.domain.application.ApplicationStatus;
 import com.jobtracker.domain.company.Company;
 import com.jobtracker.presentation.controller.ApplicationController;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -29,10 +30,17 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Import(SecurityConfig.class)
 class ApplicationControllerTest {
 
+    private static final String BEARER = "Bearer valid-token";
+
     @Autowired MockMvc mockMvc;
     @MockBean TokenProvider tokenProvider;
     @Autowired ObjectMapper objectMapper;
     @MockBean ApplicationService applicationService;
+
+    @BeforeEach
+    void setUp() {
+        given(tokenProvider.parseUserId("valid-token")).willReturn(1L);
+    }
 
     private Application sampleApplication() {
         Company company = Company.create("카카오", "IT", "https://kakao.com");
@@ -41,9 +49,10 @@ class ApplicationControllerTest {
 
     @Test
     void POST_applications_지원_건을_등록한다() throws Exception {
-        given(applicationService.register(any())).willReturn(sampleApplication());
+        given(applicationService.register(eq(1L), any())).willReturn(sampleApplication());
 
         mockMvc.perform(post("/api/applications")
+                        .header("Authorization", BEARER)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
                                 Map.of("companyId", 1, "position", "백엔드 개발자", "appliedDate", LocalDate.now().toString()))))
@@ -55,9 +64,10 @@ class ApplicationControllerTest {
     void PATCH_applications_status_상태를_전이한다() throws Exception {
         Application app = sampleApplication();
         app.advanceStatus(ApplicationStatus.INTERVIEW);
-        given(applicationService.advanceStatus(eq(1L), any())).willReturn(app);
+        given(applicationService.advanceStatus(eq(1L), eq(1L), any())).willReturn(app);
 
         mockMvc.perform(patch("/api/applications/1/status")
+                        .header("Authorization", BEARER)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of("status", "INTERVIEW"))))
                 .andExpect(status().isOk())
@@ -68,10 +78,18 @@ class ApplicationControllerTest {
     void GET_applications_status로_면접_단계_지원_건만_조회한다() throws Exception {
         Application app = sampleApplication();
         app.advanceStatus(ApplicationStatus.INTERVIEW);
-        given(applicationService.findByStatus(ApplicationStatus.INTERVIEW)).willReturn(java.util.List.of(app));
+        given(applicationService.findByStatus(1L, ApplicationStatus.INTERVIEW)).willReturn(java.util.List.of(app));
 
-        mockMvc.perform(get("/api/applications").param("status", "INTERVIEW"))
+        mockMvc.perform(get("/api/applications")
+                        .header("Authorization", BEARER).param("status", "INTERVIEW"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].status").value("INTERVIEW"));
+    }
+
+    @Test
+    void GET_applications_토큰이_없으면_401을_반환한다() throws Exception {
+        mockMvc.perform(get("/api/applications"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("UNAUTHORIZED"));
     }
 }

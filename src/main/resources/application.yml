@@ -18,6 +18,14 @@ spring:
     jpa:
       repositories:
         bootstrap-mode: deferred
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 6MB
+
+jwt:
+  secret: ${JWT_SECRET}
+  expiration-minutes: ${JWT_EXPIRATION_MINUTES:1440}
 
 springdoc:
   swagger-ui:

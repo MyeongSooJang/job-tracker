@@ -33,6 +33,10 @@ public class PersonalInfo {
     @Column(length = 2000)
     private String introduction;
 
+    public static PersonalInfo empty() {
+        return of(null, null, null, null, null, null, null, null, null, null);
+    }
+
     public static PersonalInfo of(String phone, LocalDate birthDate, String address,
                                   String githubUrl, String blogUrl, String portfolioUrl,
                                   String education, String career,

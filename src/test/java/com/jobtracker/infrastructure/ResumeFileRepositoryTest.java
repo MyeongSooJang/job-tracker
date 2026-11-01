@@ -102,4 +102,17 @@ class ResumeFileRepositoryTest {
         assertThat(found.getInfo().getBirthDate()).isEqualTo(LocalDate.of(1998, 4, 27));
         assertThat(found.getInfo().getDesiredJob()).isEqualTo("백엔드");
     }
+
+    @Test
+    void 인적_사항이_모두_비어_있는_프로필도_다시_조회하면_빈_값으로_읽힌다() {
+        User user = saveUser();
+        profileRepository.save(Profile.create(user));
+        flushAndClear();
+
+        Profile found = profileRepository.findByUserId(user.getId()).orElseThrow();
+
+        assertThat(found.getInfo()).isNotNull();
+        assertThat(found.getInfo().getPhone()).isNull();
+        assertThat(found.getInfo().getBirthDate()).isNull();
+    }
 }

@@ -26,6 +26,7 @@ public class Profile {
     @JoinColumn(name = "user_id", nullable = false, unique = true)
     private User user;
 
+    @Getter(AccessLevel.NONE)
     @Embedded
     private PersonalInfo info;
 
@@ -39,8 +40,13 @@ public class Profile {
     public static Profile create(User user) {
         Profile profile = new Profile();
         profile.user = user;
-        profile.info = PersonalInfo.of(null, null, null, null, null, null, null, null, null, null);
+        profile.info = PersonalInfo.empty();
         return profile;
+    }
+
+    // 모든 컬럼이 null 이면 Hibernate 가 임베디드 객체를 null 로 복원하므로 빈 값 객체로 대신한다.
+    public PersonalInfo getInfo() {
+        return info != null ? info : PersonalInfo.empty();
     }
 
     public void update(String name, PersonalInfo info) {

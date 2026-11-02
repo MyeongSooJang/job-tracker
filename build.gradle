@@ -2,6 +2,8 @@ plugins {
     id 'java'
     id 'org.springframework.boot' version '3.3.5'
     id 'io.spring.dependency-management' version '1.1.6'
+    id 'jacoco'
+    id 'info.solidsoft.pitest' version '1.15.0'
 }
 
 group = 'com.jobtracker'
@@ -42,4 +44,54 @@ dependencies {
 
 tasks.named('test') {
     useJUnitPlatform()
+    finalizedBy 'jacocoTestReport'
+}
+
+// 커버리지는 테스트되지 않은 코드를 찾는 용도다. 유지선은 70%이며 ./gradlew jacocoTestCoverageVerification 으로 확인한다.
+// 단언 없는 테스트는 걸러내지 못하므로 뮤테이션 점수(pitest)를 함께 본다.
+jacoco {
+    toolVersion = '0.8.12'
+}
+
+def coverageExcludes = [
+        'com/jobtracker/JobTrackerApplication.class',
+        'com/jobtracker/global/config/**',
+        '**/dto/**'
+]
+
+tasks.named('jacocoTestReport') {
+    dependsOn 'test'
+    reports {
+        xml.required = true
+        html.required = true
+    }
+    classDirectories.setFrom(files(sourceSets.main.output.classesDirs.files.collect {
+        fileTree(dir: it, exclude: coverageExcludes)
+    }))
+}
+
+tasks.named('jacocoTestCoverageVerification') {
+    dependsOn 'test'
+    classDirectories.setFrom(files(sourceSets.main.output.classesDirs.files.collect {
+        fileTree(dir: it, exclude: coverageExcludes)
+    }))
+    violationRules {
+        rule {
+            limit {
+                counter = 'LINE'
+                value = 'COVEREDRATIO'
+                minimum = 0.70
+            }
+        }
+    }
+}
+
+// 비즈니스 규칙이 있는 도메인 패키지만 뮤테이션 테스트한다. 전체 대상은 Spring 테스트가 느려 비실용적이다.
+pitest {
+    junit5PluginVersion = '1.2.1'
+    targetClasses = ['com.jobtracker.domain.*']
+    targetTests = ['com.jobtracker.domain.*']
+    threads = 4
+    outputFormats = ['HTML', 'XML']
+    timestampedReports = false
 }

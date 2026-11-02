@@ -59,6 +59,8 @@ description: Use when writing, modifying, or reviewing test code in this project
 
 - 컨트롤러 테스트는 HTTP 요청과 응답을 행동으로 기술한다: `유효한_요청이면_201과_등록된_회사를_반환한다`, `토큰이_없으면_401을_반환한다`
 - 기존 테스트의 `메서드_행동` 이름은 해당 테스트를 수정할 때 행동 중심으로 바꾼다. 이름만 바꾸려고 별도 작업을 만들지 않는다.
+- **테스트 메서드(`@Test`)만 한글 문장으로 짓는다. 헬퍼 메서드와 변수는 영문 camelCase**로 짓는다(`application()`, `applicationInInterview()`, `interviewSchedule()`). 기존 헬퍼가 `company()`처럼 영문이었고, 한글 헬퍼를 섞으면 한 파일에 두 스타일이 공존한다.
+- 상태가 필요한 헬퍼 이름에는 도메인 enum 이름과 맞춘 상태를 쓴다(`applicationInInterview`는 `ApplicationStatus.INTERVIEW`). 도메인 상태명이 바뀌면 헬퍼 이름도 함께 바꾼다.
 
 ## 템플릿
 
@@ -67,8 +69,8 @@ description: Use when writing, modifying, or reviewing test code in this project
 ```java
 class ApplicationTest {
 
-    private Application 면접_상태_지원() {
-        Application app = Application.create(1L, 회사(), "백엔드 개발자", LocalDate.now());
+    private Application applicationInInterview() {
+        Application app = Application.create(1L, company(), "백엔드 개발자", LocalDate.now());
         app.advanceStatus(ApplicationStatus.INTERVIEW);
         return app;
     }
@@ -76,7 +78,7 @@ class ApplicationTest {
     @Test
     void 면접_중인_지원은_합격으로_전이할_수_있다() {
         // given
-        Application app = 면접_상태_지원();
+        Application app = applicationInInterview();
 
         // when
         app.advanceStatus(ApplicationStatus.ACCEPTED);
@@ -88,7 +90,7 @@ class ApplicationTest {
     @Test
     void 이미_합격한_지원은_다시_면접으로_전이할_수_없다() {
         // given
-        Application app = 면접_상태_지원();
+        Application app = applicationInInterview();
         app.advanceStatus(ApplicationStatus.ACCEPTED);
 
         // when & then
@@ -164,7 +166,7 @@ class ApplicationServiceTest {
     @Test
     void 소유자의_지원은_요청한_상태로_전이된다() {
         // given
-        Application app = Application.create(1L, 회사(), "백엔드 개발자", LocalDate.now());
+        Application app = Application.create(1L, company(), "백엔드 개발자", LocalDate.now());
         given(applicationRepository.findById(10L)).willReturn(Optional.of(app));
 
         // when

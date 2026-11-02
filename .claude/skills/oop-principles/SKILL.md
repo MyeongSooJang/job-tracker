@@ -1,304 +1,77 @@
 ---
 name: oop-principles
-description: Use when writing, modifying, or refactoring Java/Spring code ("클래스 작성", "메서드 추가", "리팩터링", "기능 추가", "설계 제안"), or when a Service touches entity getters, branches on type with if/switch, or reuses code via extends. Defines 사전 스캔 절차, 레거시 수정 규칙, 오브젝트(조영호) 기반 5대 원칙 상세와 코드 예시.
+description: Use when writing, modifying, or refactoring Java/Spring/JPA code in this project ("클래스 작성", "기능 추가", "리팩터링", "설계 제안", "인터페이스 만들까", "확장 대비"), when a Service reads entity getters to decide something, branches on type/status with if/switch, or reuses code with extends, or when tempted to add an interface/strategy for a requirement that may come later.
 ---
 
-# OOP Principles — 오브젝트(조영호) 기반
+# OOP로 Java 코드 짜기
 
-핵심 절차(5단계 검토 순서, 코드 생성 규칙, 합리화 함정)는 프로젝트 `CLAUDE.md`에 있다. 이 문서는 코드를 쓰거나 고치기 전에 펼쳐보는 상세 기준이다.
+원칙을 외우는 것이 아니라 **요구사항을 객체의 책임으로 바꾸는 순서**다. 책 요약은 `references/`에 있고, 여기에는 절차와 판단 기준만 둔다.
 
-## 수정 전 사전 스캔 절차 (코드 작성 전 필수)
+핵심: **지금 있는 변형과 지금 있는 규칙만 객체로 만든다.** 구조는 요구가 실제로 둘 이상이 될 때 늘린다.
 
-기존 코드에 기능을 추가하거나 수정하는 요청이 오면, **코드를 작성하기 전에** 아래 절차를 반드시 수행한다.
+## 작성 절차
 
-### Step 1: 요청 파일 + 연관 클래스 함께 읽기
+1. **요구를 메시지로 바꾼다.** 문장 하나를 "누가 누구에게 무엇을 시키는가"로 쓴다. (`interview.addQuestion(q)`, `schedule.reflectToApplication()`)
+2. **책임을 정보 전문가에게 준다.** 그 판단에 필요한 데이터를 가진 객체가 규칙과 예외를 갖는다. 개수·중복처럼 여럿을 아는 쪽은 애그리거트 루트, 값 하나의 판단은 그 값(enum 포함)이다. Service는 조회·트랜잭션·위임만 한다.
+3. **기존 코드를 먼저 스캔한다.** 수정이면 대상 + 연관 클래스를 읽고 getter 판단, Service의 도메인 로직, 타입 분기를 찾는다. 절차와 보고 형식은 `references/legacy-scan.md`.
+4. **구조를 정한다.** 아래 '과잉 적용 방지'를 통과한 추상화만 만든다. 이 프로젝트 관례(정적 팩토리, `BusinessException`+`ErrorCode`, PATCH `/{id}/<필드>`, record DTO)가 책 패턴보다 앞선다.
+5. **구현하고 고지한다.** 기존 구조를 바꿨다면 무엇을 왜 바꿨는지 한 줄, 범위 밖에서 본 위반은 **고치지 말고 보고만** 한다.
 
-수정 대상 파일만 읽지 않는다. 아래 규칙으로 연관 클래스를 함께 읽는다.
+## 과잉 적용 방지
 
-| 수정 대상 | 함께 읽어야 할 클래스 |
-|-----------|----------------------|
-| `XxxService` | `Xxx` 엔티티, `XxxRepository`, Service가 사용하는 다른 도메인 객체 |
-| `XxxController` | `XxxService`, 관련 Request/Response DTO |
-| `Xxx` 엔티티 | 이 엔티티를 사용하는 Service 클래스 |
+추상화(인터페이스, 전략, 추상 클래스, 별도 클래스)는 아래를 **모두** 만족할 때 만든다.
 
-### Step 2: 연관 클래스 스캔 — 이 패턴들을 찾는다
+- 지금 요구에 **서로 다른 변형이 둘 이상** 있다. 구현체가 하나뿐이면 구체 클래스에 의존하고, 생성자 주입으로 교체 지점만 남긴다.
+- 변형이 늘 때 기존 분기(if/switch)를 고쳐야 하는 **분기가 이미 존재**하거나 곧 생긴다.
 
-**Tell, Don't Ask 위반 스캔** — Service에서 다음 패턴이 있으면 위반:
-```java
-// ❌ 위반 패턴: getter로 꺼내서 Service가 판단
-if (xxx.getStatus() == SomeStatus.VALUE) { ... }
-if (xxx.getType().equals("VALUE")) { ... }
-if (xxx.getAmount() > 0 && xxx.getStatus() != ...) { ... }
-return xxx.getField() != null && !xxx.getField().isBlank();
-```
+요구의 말투로 확정 여부를 읽는다.
 
-**도메인 로직 Service 집중 스캔** — Service에 있으면 엔티티로 이동 대상:
-- 금액 계산, 할인 계산, 수수료 계산
-- 상태 전이 가능 여부 판단 (`canXxx()`, `isXxx()`)
-- 유효성 검증 (`validateXxx()`)
-- 비즈니스 규칙 ("주문은 결제 완료 후에만 취소 가능" 등)
+| 사용자 표현 | 취급 |
+|-------------|------|
+| "A, B 둘 다 필요해" / "다음 스프린트에 붙인다" | 확정. 변형이 둘이므로 추상화 |
+| "나중에 B도 붙일 **수 있어**" / "확장 생각해서" / "설계해줘" | **미확정**. 현재 변형 하나만 구현 |
 
-**엔티티 누락 메서드 스캔** — Service가 getter로 꺼내서 하는 일을 엔티티가 직접 할 수 있는가:
-- `entity.getStatus() == X` → `entity.isX()` 메서드가 있는가?
-- `entity.getField() != null` → `entity.hasField()` 메서드가 있는가?
-- `entity.get*()` 여러 개 조합 → `entity.validateXxx()` 메서드가 있는가?
+- 미확정을 확정으로 바꿔 쓰지 않는다. "이메일·슬랙이 확정이라서"처럼 근거를 부풀리지 않는다. 설계 판단 요약에는 '가정: B는 아직 확정 아님'으로 적고, 추상화가 필요하면 그 시점에 한 번에 추가한다.
+- 신규 타입이 요구 한 문장당 **3개를 넘으면** 멈추고 줄일 수 있는지 본다. (스케줄러, Config, 값 객체, 인터페이스, 구현체를 한꺼번에 만드는 경우)
+- 행동이 없는 단순 CRUD·DTO에는 캡슐화 원칙을 적용하지 않는다. 필드 하나 수정은 `entity.changeX()` + 전용 Request record면 끝이다.
+- 요청 범위 밖 코드는 건드리지 않는다. 같은 파일에 위반이 있어도 보고하고 별도 작업으로 제안한다.
+- 일정 압박("빨리", "오늘 배포")은 구조를 줄일 이유가 아니라 **범위를 줄일 이유**다. 위반 분기에 `else if`를 복사하지 않고, 도메인으로 옮기는 최소 변경을 택한다.
 
-### Step 3: 스캔 결과 보고 후 코드 작성
+## Java/JPA 체크리스트
 
-스캔에서 위반 패턴이 발견되면, **코드를 작성하기 전에** 다음 형식으로 보고한다:
+**엔티티**
+- [ ] 생성은 정적 팩토리 `create(...)` + `protected` 기본 생성자. public 생성자·setter를 만들지 않는다. 자식 엔티티의 팩토리는 package-private으로 두어 애그리거트 루트를 거치게 한다.
+- [ ] 상태 변경 메서드는 의도를 드러낸다 (`changeMemo`, `advanceStatus`). `setStatus` 금지.
+- [ ] 컬렉션은 `Collections.unmodifiableList`로만 노출하고, 변경은 `addX`/`removeX`에서 규칙 검증 후 한다.
+- [ ] 유효성·전이 규칙은 엔티티/enum에 두고 위반은 `BusinessException(ErrorCode)`로 던진다. 규칙은 한 곳에만 둔다 (enum의 `canAdvanceTo`를 재사용).
+- [ ] 연쇄 접근(`a.getB().getC().getName()`) 대신 `a.cName()` 같은 의도 메서드를 둔다.
 
-```
-📋 사전 스캔 결과
-- [파일명:라인] 위반 패턴 설명 → 권장 수정 방향
-- [파일명:라인] 위반 패턴 설명 → 권장 수정 방향
+**분기와 다형성**
+- [ ] 타입/상태별 값·행동은 enum 필드나 메서드로 먼저 푼다. 상태 하나를 매핑하는 정도는 enum이면 충분하고, 변형마다 로직이 달라질 때 전략 객체로 올린다.
+- [ ] `if (x.getStatus() == ...)`를 Service에서 쓰고 있다면 `x.isY()`/`x.doZ()`로 옮긴다.
+- [ ] 코드 재사용 목적의 `extends`는 합성으로 바꾼다. `super` 호출이 필요하면 설계 신호다.
 
-요청하신 기능 추가와 함께 위 항목도 수정할까요? (아니면 요청 부분만 수정할게요.)
-```
+**의존성**
+- [ ] 내부 `new`로 협력 객체를 만들지 않고 생성자 주입. 시간은 `Clock`을 주입한다 (`LocalDate.now()` 직접 호출 금지).
+- [ ] 도메인이 인프라·프레임워크(Spring, JPA 리포지토리 구현)에 의존하지 않는다. Repository 인터페이스는 도메인에 둔다.
+- [ ] 레이어: Controller → Service → Domain 단방향. Service가 엔티티 필드를 꺼내 판단하지 않는다.
 
-위반이 없으면 보고 없이 바로 코드를 작성한다.
+**동시성·불변식**
+- [ ] 개수 제한·중복 금지 같은 불변식이 객체 안 검증만으로 보장되는지 확인하고, DB 제약(유니크, `@Version`)이 필요하면 코드를 쓰지 말고 **한계로 보고**한다. (이 프로젝트는 마이그레이션 도구가 없다.)
 
----
+## 참조
 
-## 레거시 코드 수정 요청 시 규칙 (핵심)
-
-기존 코드에 기능을 추가하거나 수정하는 요청에서 아래 3가지 위반 패턴을 **코드 작성 전에** 반드시 확인한다.
+| 파일 | 언제 |
+|------|------|
+| `references/legacy-scan.md` | 기존 코드 수정 전 사전 스캔 절차, 보고 형식, 레거시 3대 규칙 |
+| `references/principles.md` | 책임·캡슐화·의존성·합성·타입 계층 상세와 안티패턴 예시 |
 
-### 규칙 1: 기존 나쁜 구조를 그대로 답습하지 않는다
+## 합리화 함정 — 이 생각이 들면 STOP
 
-기존 코드에 getter/setter 남용, Service에 도메인 로직 집중, String 타입 상태값 등이 있어도 **그 스타일로 기능을 추가하지 않는다.**
-
-원칙에 맞게 리팩터링 후 기능을 추가하고, 무엇을 왜 바꿨는지 한 줄로 고지한다.
-
-❌ 기존 나쁜 패턴 답습
-```java
-public int calculateDiscount(Long orderId) {
-    if ("VIP".equals(order.getMemberGrade())) return ... // getter로 꺼내 외부 판단
-}
-```
-
-✅ 원칙에 맞게 수정 후 고지
-```java
-public class Order {
-    public int calculateDiscount() { return grade.applyDiscount(price * quantity); }
-}
-// → "도메인 로직을 Order 객체로 이동했습니다. 원래 방식이 필요하면 말씀해주세요."
-```
-
-### 규칙 2: "빠르게" 요청에도 OCP 위반 코드로 작성하지 않는다
-
-if/else나 switch로 타입을 분기하는 기존 코드에 새 타입 추가 요청이 오면, **전략 패턴으로 리팩터링 후 추가하고 고지한다.**
-
-❌ 빠르다는 이유로 기존 if/else에 추가
-```java
-} else if (paymentType.equals("KAKAO_PAY")) { ... }
-```
-
-✅ 전략 패턴으로 전환 후 추가하고 고지
-```java
-public interface PaymentProcessor {
-    boolean supports(String type);
-    PaymentResult pay(int amount);
-}
-// → "OCP 위반 구조여서 전략 패턴으로 전환 후 추가했습니다. 기존 방식이 필요하면 말씀해주세요."
-```
-
-### 규칙 3: 상속 구조에 extends 추가 요청이 오면 합성으로 전환 후 추가한다
-
-`abstract class` 상속으로 공통 로직을 재사용하는 기존 구조에 새 클래스 추가 요청이 오면, **합성으로 전환 후 기능을 추가하고 고지한다.**
-
-❌ 기존 상속 구조 무비판적 답습
-```java
-public class PushNotificationService extends BaseNotificationService { ... }
-```
-
-✅ 합성으로 전환 후 추가하고 고지
-```java
-public class NotificationService {
-    private final Map<NotificationChannel, NotificationSender> senders;
-    private final RetryTemplate retryTemplate;
-    private final NotificationRepository repository;
-}
-// → "코드 재사용 목적의 상속을 합성으로 전환했습니다. 기존 구조가 필요하면 말씀해주세요."
-```
-
-
-## 각 원칙 상세
-
-### 1. 역할·책임·협력 (3·5장)
-
-**핵심 원칙**
-- 객체를 설계할 때 **데이터(상태)가 아닌 행동(책임)**에서 시작한다.
-- 메시지를 먼저 결정하고, 그 메시지를 처리할 객체를 선택한다. (메시지가 객체를 선택한다)
-- 책임은 **정보 전문가(INFORMATION EXPERT)** 에게 할당한다: 책임 수행에 필요한 정보를 가진 객체가 그 책임을 진다.
-- 정보를 알고 있다고 해서 반드시 그 정보를 저장할 필요는 없다. 처리 불가한 작업은 외부에 위임한다.
-- 하나의 객체는 하나의 이유로만 변경된다 (SRP).
-- 객체는 스스로 책임을 수행하는 **자율적인** 존재다 — 외부에서 데이터를 꺼내 처리하지 않는다.
-
-**Spring Boot 안티패턴**
-
-❌ Service가 도메인 로직을 직접 구현 (빈약한 도메인 모델)
-```java
-public class OrderService {
-    public int calculateDiscount(Order order) {
-        if (order.getMemberGrade().equals("VIP")) return order.getPrice() * 10 / 100;
-        return 0;
-    }
-}
-```
-
-✅ 도메인 객체가 자신의 책임을 수행
-```java
-public class Order {
-    public int calculateDiscount() {
-        return member.applyDiscount(this.price);
-    }
-}
-```
-
-**체크리스트**
-- [ ] 이 메서드/클래스는 하나의 이유로만 변경되는가?
-- [ ] 책임이 정보를 가진 객체에 할당되었는가?
-- [ ] Service 레이어가 도메인 로직을 직접 구현하지 않는가?
-- [ ] 객체가 스스로 처리하는가? (데이터를 꺼내달라는 요청이 아닌)
-
----
-
-### 2. 캡슐화 (4·14장)
-
-**핵심 원칙**
-- 캡슐화는 단순히 `private` 필드 + getter/setter가 아니다. **변할 수 있는 모든 것을 감추는 것**이다.
-- 속성을 `private`으로 선언했더라도 getter로 꺼내서 외부에서 조작하면 캡슐화가 깨진 것이다.
-- 객체의 퍼블릭 인터페이스와 구현을 분리한다: 인터페이스만 알아도 사용 가능해야 한다.
-- 변하는 부분을 분리해서 타입 계층을 만들고, 변하지 않는 부분에 합성한다.
-
-**Spring Boot 안티패턴**
-
-❌ getter로 꺼내서 외부에서 처리 (Tell, Don't Ask 위반)
-```java
-if (order.getStatus().equals("PENDING") && order.getAmount() > 0) {
-    order.setStatus("CONFIRMED");
-}
-```
-
-✅ 객체에게 메시지를 보내 스스로 처리하게
-```java
-order.confirm();
-```
-
-**체크리스트**
-- [ ] getter로 꺼낸 값을 외부에서 조작하지 않는가? (Tell, Don't Ask)
-- [ ] 변경 가능한 내부 상태가 외부에 노출되지 않는가?
-- [ ] 인터페이스만 보고 사용 가능한가?
-- [ ] 변하는 부분(할인 정책, 배송 방식 등)이 별도 타입으로 분리되었는가?
-
----
-
-### 3. 의존성 관리 (8·9장)
-
-**핵심 원칙**
-- 의존성은 단방향이어야 한다. 순환 의존성은 설계 실패 신호다.
-- 구체 클래스가 아닌 **추상화(인터페이스/추상클래스)에 의존**한다.
-- **`new`는 해롭다** — 내부에서 구체 클래스를 `new`로 생성하면 구체 클래스에 결합된다. 생성과 사용을 분리한다.
-- 의존성은 생성자를 통해 명시적으로 드러낸다.
-- 변경이 예상되는 지점에서는 컴파일/런타임 의존성을 분리한다.
-
-**Spring Boot 안티패턴**
-
-❌ Service 내부에서 구체 구현체를 직접 생성
-```java
-public class OrderService {
-    private final DiscountPolicy policy = new RateDiscountPolicy();
-}
-```
-
-✅ 생성자 주입으로 추상화에 의존
-```java
-@Service
-@RequiredArgsConstructor
-public class OrderService {
-    private final DiscountPolicy discountPolicy;
-}
-```
-
-**체크리스트**
-- [ ] 구체 클래스가 아닌 인터페이스에 의존하는가?
-- [ ] `new`로 내부에서 구체 클래스를 생성하는 코드가 있는가?
-- [ ] 의존성이 생성자를 통해 명시적으로 드러나는가?
-- [ ] 순환 의존성이 없는가?
-- [ ] 도메인 레이어가 인프라/프레임워크에 의존하지 않는가?
-
----
-
-### 4. 합성 vs 상속 (10·11장)
-
-**핵심 원칙**
-- **코드 재사용 목적의 상속은 피한다.** 상속은 캡슐화를 깨고 강한 결합을 만든다.
-- **합성(Composition)을 기본으로 선택한다.** 퍼블릭 인터페이스를 통해서만 협력한다.
-- 상속을 사용하는 유일한 정당한 이유: **타입 계층 구성 (is-a 관계 + 행동 호환성)**
-- `super` 참조를 사용하면 두 클래스가 강하게 결합된다.
-- 상속 남용 시 클래스 폭발(combinatorial explosion) 발생.
-
-**Spring Boot 안티패턴**
-
-❌ 코드 재사용 목적의 상속
-```java
-public abstract class BaseService {
-    protected UserRepository userRepository;
-    protected void validateUser(Long userId) { ... }
-}
-public class OrderService extends BaseService {
-    public void placeOrder(Long userId) { validateUser(userId); }
-}
-```
-
-✅ 합성으로 공통 로직 재사용
-```java
-public class OrderService {
-    private final UserValidator userValidator;
-    public void placeOrder(Long userId) { userValidator.validate(userId); }
-}
-```
-
-**체크리스트**
-- [ ] 상속을 사용하는 이유가 "코드 재사용"인가? (그렇다면 합성으로 전환)
-- [ ] `super`를 호출하는 코드가 있는가? (강한 결합 신호)
-- [ ] 새 기능 추가 시 기존 클래스를 수정하지 않아도 되는가?
-- [ ] 기능 조합이 늘어날 때 클래스 수가 폭발하지 않는가?
-
----
-
-### 5. 타입 계층·LSP (13장)
-
-**핵심 원칙**
-- 상속의 일차 목적은 **타입 계층 구성**이다. 행동이 호환될 경우에만 타입 계층으로 묶는다.
-- **리스코프 치환 원칙(LSP)**: 자식 클래스는 부모 클래스를 완전히 대체할 수 있어야 한다.
-- is-a 관계가 성립해도 **행동이 호환되지 않으면 상속을 사용하지 않는다.**
-- **개방-폐쇄 원칙(OCP)**: 기존 코드를 수정하지 않고 확장 가능해야 한다.
-- 조건문(if/switch)으로 타입을 분기하는 코드는 다형성으로 대체를 검토한다.
-
-**Spring Boot 안티패턴**
-
-❌ OCP 위반 — 새 타입 추가 시 기존 코드 수정 필요
-```java
-public int discount(String type, int price) {
-    if (type.equals("RATE")) return price * 10 / 100;
-    if (type.equals("AMOUNT")) return 1000;
-    // 새 정책마다 여기를 수정해야 함
-}
-```
-
-✅ 추상화로 OCP 준수
-```java
-public interface DiscountPolicy {
-    int discount(int price);
-}
-public class RateDiscountPolicy implements DiscountPolicy {
-    public int discount(int price) { return price * 10 / 100; }
-}
-```
-
-**체크리스트**
-- [ ] 자식 클래스가 부모를 완전히 대체할 수 있는가? (LSP)
-- [ ] 자식 클래스가 부모의 메서드 의미를 바꾸지 않는가?
-- [ ] 새 타입/기능 추가 시 기존 코드를 수정하지 않아도 되는가? (OCP)
-- [ ] 조건문으로 타입을 분기하는 코드가 있는가? (다형성으로 대체 검토)
+| 생각 | 현실 |
+|------|------|
+| "기존 코드 스타일을 유지해야 한다" | 나쁜 스타일은 답습하지 않는다. 옮기고 고지한다. |
+| "빠르게 하려면 if/else에 넣자" | 빠른 추가가 부채다. 도메인으로 옮기는 변경이 오히려 작다. |
+| "나중에 쓸 수도 있으니 인터페이스부터" | '수도 있다'는 확정이 아니다. 변형이 둘이 되면 추가한다. |
+| "원칙을 지켰으니 클래스가 많아도 된다" | 신규 타입이 많으면 과설계 신호다. 줄일 수 있는지 먼저 본다. |
+| "이 위반도 같은 파일이니 같이 고치자" | 범위 밖이다. 보고만 한다. |

@@ -19,11 +19,13 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -84,5 +86,56 @@ class InterviewControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of("score", 101))))
                 .andExpect(status().isBadRequest());
+    }
+
+    private Interview interview() {
+        Company company = Company.create("카카오", "IT", "https://kakao.com");
+        Application app = Application.create(1L, company, "백엔드 개발자", LocalDate.of(2026, 11, 1));
+        return Interview.create(app, 1, LocalDateTime.of(2026, 11, 10, 14, 0), "판교", "1차 면접");
+    }
+
+    @Test
+    void 지원_건의_면접_목록을_조회한다() throws Exception {
+        given(interviewService.findByApplicationId(1L, 1L)).willReturn(List.of(interview()));
+
+        mockMvc.perform(get("/api/applications/1/interviews").header("Authorization", BEARER))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].round").value(1))
+                .andExpect(jsonPath("$[0].location").value("판교"));
+    }
+
+    @Test
+    void 면접_회차가_1_미만이면_400을_반환한다() throws Exception {
+        mockMvc.perform(post("/api/applications/1/interviews")
+                        .header("Authorization", BEARER)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(
+                                Map.of("round", 0, "interviewDate", "2026-11-10T14:00:00"))))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
+    }
+
+    @Test
+    void 면접에_질문을_추가하면_201과_질문을_반환한다() throws Exception {
+        Interview interview = interview();
+        interview.addQuestion("자기소개 해주세요", "저는...", "잘 대답했음");
+        given(interviewService.addQuestion(eq(1L), eq(1L), eq(1L), any())).willReturn(interview);
+
+        mockMvc.perform(post("/api/applications/1/interviews/1/questions")
+                        .header("Authorization", BEARER)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of("question", "자기소개 해주세요"))))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.questions[0].question").value("자기소개 해주세요"));
+    }
+
+    @Test
+    void 질문이_비어있으면_400을_반환한다() throws Exception {
+        mockMvc.perform(post("/api/applications/1/interviews/1/questions")
+                        .header("Authorization", BEARER)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of("question", " "))))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
     }
 }

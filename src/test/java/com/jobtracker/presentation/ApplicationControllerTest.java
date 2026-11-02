@@ -5,6 +5,8 @@ import com.jobtracker.application.service.ApplicationService;
 import com.jobtracker.domain.application.Application;
 import com.jobtracker.domain.application.ApplicationStatus;
 import com.jobtracker.domain.company.Company;
+import com.jobtracker.global.exception.BusinessException;
+import com.jobtracker.global.exception.ErrorCode;
 import com.jobtracker.presentation.controller.ApplicationController;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -84,6 +86,58 @@ class ApplicationControllerTest {
                         .header("Authorization", BEARER).param("status", "INTERVIEW"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].status").value("INTERVIEW"));
+    }
+
+    @Test
+    void 지원_건_등록_시_필수값이_없으면_400을_반환한다() throws Exception {
+        mockMvc.perform(post("/api/applications")
+                        .header("Authorization", BEARER)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of("position", "백엔드 개발자"))))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
+    }
+
+    @Test
+    void 상태_전이_요청에_상태가_없으면_400을_반환한다() throws Exception {
+        mockMvc.perform(patch("/api/applications/1/status")
+                        .header("Authorization", BEARER)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
+    }
+
+    @Test
+    void 허용되지_않는_상태_전이는_400과_에러_코드를_반환한다() throws Exception {
+        given(applicationService.advanceStatus(eq(1L), eq(1L), any()))
+                .willThrow(new BusinessException(ErrorCode.INVALID_STATUS_TRANSITION));
+
+        mockMvc.perform(patch("/api/applications/1/status")
+                        .header("Authorization", BEARER)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of("status", "ACCEPTED"))))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("INVALID_STATUS_TRANSITION"));
+    }
+
+    @Test
+    void 단건_조회한_지원_건의_상태와_직무를_반환한다() throws Exception {
+        given(applicationService.findById(1L, 1L)).willReturn(sampleApplication());
+
+        mockMvc.perform(get("/api/applications/1").header("Authorization", BEARER))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.position").value("백엔드 개발자"))
+                .andExpect(jsonPath("$.status").value("RESUME_SUBMITTED"));
+    }
+
+    @Test
+    void 존재하지_않거나_남의_지원_건은_404를_반환한다() throws Exception {
+        given(applicationService.findById(1L, 1L)).willThrow(new BusinessException(ErrorCode.APPLICATION_NOT_FOUND));
+
+        mockMvc.perform(get("/api/applications/1").header("Authorization", BEARER))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("APPLICATION_NOT_FOUND"));
     }
 
     @Test

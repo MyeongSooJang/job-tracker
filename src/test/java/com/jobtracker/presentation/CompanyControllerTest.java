@@ -88,4 +88,26 @@ class CompanyControllerTest {
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.code").value("COMPANY_NOT_FOUND"));
     }
+
+    @Test
+    void 회사_이름이_비어있으면_400을_반환한다() throws Exception {
+        mockMvc.perform(post("/api/companies")
+                        .header("Authorization", BEARER)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of("name", " ", "industry", "IT"))))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
+    }
+
+    @Test
+    void 이미_등록된_회사는_409를_반환한다() throws Exception {
+        given(companyService.register(any())).willThrow(new BusinessException(ErrorCode.COMPANY_ALREADY_EXISTS));
+
+        mockMvc.perform(post("/api/companies")
+                        .header("Authorization", BEARER)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of("name", "카카오"))))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("COMPANY_ALREADY_EXISTS"));
+    }
 }

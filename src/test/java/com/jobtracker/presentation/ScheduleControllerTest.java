@@ -66,13 +66,55 @@ class ScheduleControllerTest {
                 .andExpect(jsonPath("$.address").value("경기도 성남시 판교역로 166"));
     }
 
+    private Schedule schedule(String address) {
+        Company company = Company.create("카카오", "IT", "https://kakao.com");
+        Application app = Application.create(1L, company, "백엔드 개발자", LocalDate.of(2026, 11, 1));
+        return Schedule.create(app, "1차 면접", LocalDateTime.of(2026, 11, 10, 14, 0), ScheduleType.INTERVIEW, address, "");
+    }
+
     @Test
-    void GET_schedules_일정_목록을_조회한다() throws Exception {
-        given(scheduleService.findAll(1L)).willReturn(List.of());
+    void 기간을_지정하지_않으면_전체_일정을_조회한다() throws Exception {
+        given(scheduleService.findAll(1L)).willReturn(List.of(schedule("판교")));
 
         mockMvc.perform(get("/api/schedules")
                         .header("Authorization", BEARER))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].title").value("1차 면접"));
+    }
+
+    @Test
+    void 기간을_지정하면_해당_기간의_일정만_조회한다() throws Exception {
+        LocalDateTime from = LocalDateTime.of(2026, 11, 1, 0, 0);
+        LocalDateTime to = LocalDateTime.of(2026, 11, 30, 23, 59);
+        given(scheduleService.findByPeriod(1L, from, to)).willReturn(List.of(schedule("판교")));
+
+        mockMvc.perform(get("/api/schedules")
+                        .header("Authorization", BEARER)
+                        .param("from", "2026-11-01T00:00:00")
+                        .param("to", "2026-11-30T23:59:00"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].address").value("판교"));
+    }
+
+    @Test
+    void 기간의_한쪽만_지정하면_전체_일정을_조회한다() throws Exception {
+        given(scheduleService.findAll(1L)).willReturn(List.of(schedule("판교")));
+
+        mockMvc.perform(get("/api/schedules")
+                        .header("Authorization", BEARER)
+                        .param("from", "2026-11-01T00:00:00"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].title").value("1차 면접"));
+    }
+
+    @Test
+    void 수정할_주소가_비어있으면_400을_반환한다() throws Exception {
+        mockMvc.perform(patch("/api/schedules/1/address")
+                        .header("Authorization", BEARER)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of("address", " "))))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
     }
 
     @Test

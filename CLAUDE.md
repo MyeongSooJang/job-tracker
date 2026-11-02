@@ -56,6 +56,6 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 작업 규칙
 
-- 새 작업은 main에서 브랜치를 따서 진행한다. 기능 하나가 끝나고 `./gradlew test`가 통과하면 별도 확인 없이 커밋하고 그 브랜치를 push한 뒤 PR을 만든다. 머지는 사용자가 지시할 때 `gh pr merge --merge --delete-branch`로 한다. 변경 흐름을 main 이력에서 볼 수 있도록 squash/rebase를 쓰지 않고 머지 커밋으로 PR 안의 커밋을 보존한다(전역 `commit-and-pr-format` 스킬과 같은 규칙). main 직접 커밋/push는 전역 훅(`~/.claude/hooks/git-guard.py`)이 차단한다. 커밋 메시지는 기존 이력처럼 `feat:`/`fix:` 접두사 + 한글로 작성한다. 테스트가 실패하면 커밋/push하지 않는다.
-- 머지 커밋으로 PR 안의 커밋이 그대로 남으므로, 작업 중 논리 단계(설정 추가, 기준 변경, 측정 결과 반영 등)가 끝날 때마다 바로 커밋한다. 작업을 끝낸 뒤 한꺼번에 나누지 않고, 한 커밋은 하나의 변경 이유만 담아 `git log`로 변경 흐름이 읽히게 한다. PR 흐름만 볼 때는 `git log --first-parent`, 단계까지 볼 때는 `git log --graph`를 쓴다.
+- 브랜치·커밋·PR·머지 방식과 형식은 전역 `commit-and-pr-format` 스킬을 따른다. 커밋·PR 작업 전에 스킬을 호출한다.
+- 이 프로젝트에서만 다른 점: 기능 하나가 끝나고 `./gradlew test`가 통과하면 별도 확인 없이 커밋·push·PR 생성까지 하되, **머지는 사용자가 지시할 때만** 한다. 테스트가 실패하면 커밋/push하지 않는다.
 - 커밋 메시지에 `Co-Authored-By` 등 Claude 관련 attribution 줄을 넣지 않는다.

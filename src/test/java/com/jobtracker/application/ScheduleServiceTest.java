@@ -103,7 +103,7 @@ class ScheduleServiceTest {
         verify(reviewRepository, never()).save(any(Review.class));
     }
 
-    private Schedule 판교_일정() {
+    private Schedule pangyoSchedule() {
         Company company = Company.create("카카오", "IT", "https://kakao.com");
         Application app = Application.create(1L, company, "백엔드 개발자", LocalDate.of(2026, 11, 1));
         return Schedule.create(app, "1차 면접", LocalDateTime.of(2026, 11, 10, 14, 0), ScheduleType.INTERVIEW, "판교", "");
@@ -111,7 +111,7 @@ class ScheduleServiceTest {
 
     @Test
     void 소유자는_일정의_주소를_수정할_수_있다() {
-        Schedule schedule = 판교_일정();
+        Schedule schedule = pangyoSchedule();
         given(scheduleRepository.findById(1L)).willReturn(Optional.of(schedule));
 
         scheduleService.updateAddress(1L, 1L, new ScheduleAddressRequest("서울"));
@@ -121,7 +121,7 @@ class ScheduleServiceTest {
 
     @Test
     void 다른_사용자의_일정은_주소를_수정할_수_없다() {
-        Schedule schedule = 판교_일정();
+        Schedule schedule = pangyoSchedule();
         given(scheduleRepository.findById(1L)).willReturn(Optional.of(schedule));
 
         assertErrorCode(() -> scheduleService.updateAddress(2L, 1L, new ScheduleAddressRequest("서울")),

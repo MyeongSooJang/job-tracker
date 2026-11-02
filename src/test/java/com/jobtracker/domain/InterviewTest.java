@@ -16,7 +16,7 @@ class InterviewTest {
 
     private static final LocalDateTime INTERVIEW_DATE = LocalDateTime.of(2026, 11, 10, 14, 0);
 
-    private Interview 면접() {
+    private Interview interview() {
         Company company = Company.create("카카오", "IT", "https://kakao.com");
         Application application = Application.create(1L, company, "백엔드 개발자", LocalDate.of(2026, 11, 1));
         return Interview.create(application, 1, INTERVIEW_DATE, "판교 본사", "1차 면접");
@@ -24,7 +24,7 @@ class InterviewTest {
 
     @Test
     void 면접을_만들면_입력한_정보가_담기고_점수와_질문은_비어있다() {
-        Interview interview = 면접();
+        Interview interview = interview();
 
         assertThat(interview.getRound()).isEqualTo(1);
         assertThat(interview.getInterviewDate()).isEqualTo(INTERVIEW_DATE);
@@ -36,7 +36,7 @@ class InterviewTest {
 
     @Test
     void 면접을_평가하면_점수가_저장된다() {
-        Interview interview = 면접();
+        Interview interview = interview();
 
         interview.evaluate(4);
 
@@ -45,7 +45,7 @@ class InterviewTest {
 
     @Test
     void 질문을_추가하면_질문과_답변과_메모가_함께_기록된다() {
-        Interview interview = 면접();
+        Interview interview = interview();
 
         interview.addQuestion("자기소개 해주세요", "저는...", "잘 대답했음");
 
@@ -58,7 +58,7 @@ class InterviewTest {
 
     @Test
     void 조회한_질문_목록은_외부에서_수정할_수_없다() {
-        Interview interview = 면접();
+        Interview interview = interview();
 
         assertThatThrownBy(() -> interview.getQuestions().clear())
                 .isInstanceOf(UnsupportedOperationException.class);

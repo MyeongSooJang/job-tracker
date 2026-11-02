@@ -3,88 +3,112 @@ package com.jobtracker.domain;
 import com.jobtracker.domain.application.Application;
 import com.jobtracker.domain.application.ApplicationStatus;
 import com.jobtracker.domain.company.Company;
-import com.jobtracker.global.exception.BusinessException;
+import com.jobtracker.global.exception.ErrorCode;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
 
 import java.time.LocalDate;
-import java.util.stream.Stream;
 
+import static com.jobtracker.support.ErrorCodeAssertions.assertErrorCode;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.assertThatCode;
 
 class ApplicationTest {
 
-    private Company company() {
-        return Company.create("카카오", "IT", "https://kakao.com");
+    private static final Long OWNER_ID = 1L;
+    private static final Long OTHER_USER_ID = 2L;
+
+    private Application 서류_제출_상태_지원() {
+        Company company = Company.create("카카오", "IT", "https://kakao.com");
+        return Application.create(OWNER_ID, company, "백엔드 개발자", LocalDate.of(2026, 11, 1));
+    }
+
+    private Application 면접_중인_지원() {
+        Application app = 서류_제출_상태_지원();
+        app.advanceStatus(ApplicationStatus.INTERVIEW);
+        return app;
     }
 
     @Test
-    void create_초기_상태는_RESUME_SUBMITTED이다() {
-        Application app = Application.create(1L, company(), "백엔드 개발자", LocalDate.now());
+    void 지원을_새로_만들면_서류_제출_상태이다() {
+        Application app = 서류_제출_상태_지원();
 
         assertThat(app.getStatus()).isEqualTo(ApplicationStatus.RESUME_SUBMITTED);
     }
 
     @Test
-    void advanceStatus_면접으로_전이한다() {
-        Application app = Application.create(1L, company(), "백엔드 개발자", LocalDate.now());
+    void 서류_제출_상태의_지원은_면접으로_전이할_수_있다() {
+        Application app = 서류_제출_상태_지원();
+
         app.advanceStatus(ApplicationStatus.INTERVIEW);
 
         assertThat(app.getStatus()).isEqualTo(ApplicationStatus.INTERVIEW);
     }
 
     @Test
-    void advanceStatus_면접에서_합격으로_전이한다() {
-        Application app = Application.create(1L, company(), "백엔드 개발자", LocalDate.now());
-        app.advanceStatus(ApplicationStatus.INTERVIEW);
+    void 면접_중인_지원은_합격으로_전이할_수_있다() {
+        Application app = 면접_중인_지원();
+
         app.advanceStatus(ApplicationStatus.ACCEPTED);
 
         assertThat(app.getStatus()).isEqualTo(ApplicationStatus.ACCEPTED);
     }
 
     @Test
-    void advanceStatus_유효하지_않은_전이시_예외를_던진다() {
-        Application app = Application.create(1L, company(), "백엔드 개발자", LocalDate.now());
-
-        assertThatThrownBy(() -> app.advanceStatus(ApplicationStatus.ACCEPTED))
-                .isInstanceOf(BusinessException.class);
-    }
-
-    @ParameterizedTest
-    @MethodSource("allInProgressStatuses")
-    void advanceStatus_불합격은_모든_진행_상태에서_가능하다(ApplicationStatus fromStatus) {
-        Application app = Application.create(1L, company(), "백엔드 개발자", LocalDate.now());
-
-        if (fromStatus == ApplicationStatus.INTERVIEW) {
-            app.advanceStatus(ApplicationStatus.INTERVIEW);
-        }
+    void 서류_제출_상태의_지원은_불합격으로_전이할_수_있다() {
+        Application app = 서류_제출_상태_지원();
 
         app.advanceStatus(ApplicationStatus.REJECTED);
 
         assertThat(app.getStatus()).isEqualTo(ApplicationStatus.REJECTED);
     }
 
-    static Stream<ApplicationStatus> allInProgressStatuses() {
-        return Stream.of(
-            ApplicationStatus.RESUME_SUBMITTED,
-            ApplicationStatus.INTERVIEW
-        );
+    @Test
+    void 면접_중인_지원은_불합격으로_전이할_수_있다() {
+        Application app = 면접_중인_지원();
+
+        app.advanceStatus(ApplicationStatus.REJECTED);
+
+        assertThat(app.getStatus()).isEqualTo(ApplicationStatus.REJECTED);
     }
 
     @Test
-    void isOwnedBy_소유자만_true를_반환한다() {
-        Application app = Application.create(1L, company(), "백엔드 개발자", LocalDate.now());
+    void 서류_제출_상태에서_바로_합격으로_전이할_수_없다() {
+        Application app = 서류_제출_상태_지원();
 
-        assertThat(app.isOwnedBy(1L)).isTrue();
-        assertThat(app.isOwnedBy(2L)).isFalse();
+        assertErrorCode(() -> app.advanceStatus(ApplicationStatus.ACCEPTED), ErrorCode.INVALID_STATUS_TRANSITION);
+        assertThat(app.getStatus()).isEqualTo(ApplicationStatus.RESUME_SUBMITTED);
     }
 
     @Test
-    void verifyOwner_소유자가_아니면_예외가_발생한다() {
-        Application app = Application.create(1L, company(), "백엔드 개발자", LocalDate.now());
+    void 이미_합격한_지원은_다시_전이할_수_없다() {
+        Application app = 면접_중인_지원();
+        app.advanceStatus(ApplicationStatus.ACCEPTED);
 
-        assertThatThrownBy(() -> app.verifyOwner(2L)).isInstanceOf(BusinessException.class);
+        assertErrorCode(() -> app.advanceStatus(ApplicationStatus.REJECTED), ErrorCode.INVALID_STATUS_TRANSITION);
+        assertThat(app.getStatus()).isEqualTo(ApplicationStatus.ACCEPTED);
+    }
+
+    @Test
+    void 지원한_본인은_소유자로_확인된다() {
+        assertThat(서류_제출_상태_지원().isOwnedBy(OWNER_ID)).isTrue();
+    }
+
+    @Test
+    void 다른_사용자는_소유자로_확인되지_않는다() {
+        assertThat(서류_제출_상태_지원().isOwnedBy(OTHER_USER_ID)).isFalse();
+    }
+
+    @Test
+    void 소유자는_소유권_검증을_통과한다() {
+        Application app = 서류_제출_상태_지원();
+
+        assertThatCode(() -> app.verifyOwner(OWNER_ID)).doesNotThrowAnyException();
+    }
+
+    @Test
+    void 다른_사용자의_지원은_존재하지_않는_것으로_취급한다() {
+        Application app = 서류_제출_상태_지원();
+
+        assertErrorCode(() -> app.verifyOwner(OTHER_USER_ID), ErrorCode.APPLICATION_NOT_FOUND);
     }
 }

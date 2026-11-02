@@ -12,7 +12,7 @@ import com.jobtracker.domain.review.ReviewRepository;
 import com.jobtracker.domain.schedule.Schedule;
 import com.jobtracker.domain.schedule.ScheduleRepository;
 import com.jobtracker.domain.schedule.ScheduleType;
-import com.jobtracker.global.exception.BusinessException;
+import com.jobtracker.global.exception.ErrorCode;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -21,9 +21,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Optional;
 
+import static com.jobtracker.support.ErrorCodeAssertions.assertErrorCode;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
@@ -102,15 +103,37 @@ class ScheduleServiceTest {
         verify(reviewRepository, never()).save(any(Review.class));
     }
 
-    @Test
-    void updateAddress_다른_사용자의_일정은_수정할_수_없다() {
+    private Schedule pangyoSchedule() {
         Company company = Company.create("카카오", "IT", "https://kakao.com");
-        Application app = Application.create(1L, company, "백엔드 개발자", LocalDate.now());
-        Schedule schedule = Schedule.create(app, "1차 면접", LocalDateTime.now(), ScheduleType.INTERVIEW, "판교", "");
-        given(scheduleRepository.findById(1L)).willReturn(java.util.Optional.of(schedule));
+        Application app = Application.create(1L, company, "백엔드 개발자", LocalDate.of(2026, 11, 1));
+        return Schedule.create(app, "1차 면접", LocalDateTime.of(2026, 11, 10, 14, 0), ScheduleType.INTERVIEW, "판교", "");
+    }
 
-        assertThatThrownBy(() -> scheduleService.updateAddress(2L, 1L, new ScheduleAddressRequest("서울")))
-                .isInstanceOf(BusinessException.class);
+    @Test
+    void 소유자는_일정의_주소를_수정할_수_있다() {
+        Schedule schedule = pangyoSchedule();
+        given(scheduleRepository.findById(1L)).willReturn(Optional.of(schedule));
+
+        scheduleService.updateAddress(1L, 1L, new ScheduleAddressRequest("서울"));
+
+        assertThat(schedule.getAddress()).isEqualTo("서울");
+    }
+
+    @Test
+    void 다른_사용자의_일정은_주소를_수정할_수_없다() {
+        Schedule schedule = pangyoSchedule();
+        given(scheduleRepository.findById(1L)).willReturn(Optional.of(schedule));
+
+        assertErrorCode(() -> scheduleService.updateAddress(2L, 1L, new ScheduleAddressRequest("서울")),
+                ErrorCode.SCHEDULE_NOT_FOUND);
         assertThat(schedule.getAddress()).isEqualTo("판교");
+    }
+
+    @Test
+    void 존재하지_않는_일정의_주소는_수정할_수_없다() {
+        given(scheduleRepository.findById(1L)).willReturn(Optional.empty());
+
+        assertErrorCode(() -> scheduleService.updateAddress(1L, 1L, new ScheduleAddressRequest("서울")),
+                ErrorCode.SCHEDULE_NOT_FOUND);
     }
 }

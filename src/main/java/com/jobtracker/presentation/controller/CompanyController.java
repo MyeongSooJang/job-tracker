@@ -1,8 +1,10 @@
 package com.jobtracker.presentation.controller;
 
 import com.jobtracker.application.service.CompanyService;
-import com.jobtracker.domain.company.Company;
 import com.jobtracker.application.service.dto.CompanyRequest;
+import com.jobtracker.application.service.dto.CompanyResponse;
+import com.jobtracker.application.service.dto.CompanyReviewResponse;
+import com.jobtracker.domain.company.Company;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -24,12 +26,17 @@ public class CompanyController {
     }
 
     @GetMapping
-    public List<Company> findAll() {
+    public List<CompanyResponse> findAll() {
         return companyService.findAll();
     }
 
     @GetMapping("/{id}")
-    public Company findById(@PathVariable Long id) {
-        return companyService.findById(id);
+    public CompanyResponse findById(@PathVariable Long id) {
+        return companyService.findDetail(id);
+    }
+
+    @GetMapping("/{id}/reviews")
+    public List<CompanyReviewResponse> findReviews(@PathVariable Long id) {
+        return companyService.findReviews(id);
     }
 }

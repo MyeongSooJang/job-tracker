@@ -2,6 +2,7 @@ package com.jobtracker.application.service.dto;
 
 import com.jobtracker.domain.profile.PersonalInfo;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.PastOrPresent;
 import jakarta.validation.constraints.Size;
 
 import java.time.LocalDate;
@@ -17,10 +18,11 @@ public record ProfileRequest(
         @Size(max = 2000, message = "학력은 2000자 이하여야 합니다.") String education,
         @Size(max = 2000, message = "경력은 2000자 이하여야 합니다.") String career,
         @Size(max = 255, message = "희망 직무가 너무 깁니다.") String desiredJob,
-        @Size(max = 2000, message = "자기소개는 2000자 이하여야 합니다.") String introduction) {
+        @Size(max = 2000, message = "자기소개는 2000자 이하여야 합니다.") String introduction,
+        @PastOrPresent(message = "취업 준비 시작일은 미래 날짜일 수 없습니다.") LocalDate jobSearchStartDate) {
 
     public PersonalInfo toPersonalInfo() {
         return PersonalInfo.of(phone, birthDate, address, githubUrl, blogUrl, portfolioUrl,
-                education, career, desiredJob, introduction);
+                education, career, desiredJob, introduction, jobSearchStartDate);
     }
 }

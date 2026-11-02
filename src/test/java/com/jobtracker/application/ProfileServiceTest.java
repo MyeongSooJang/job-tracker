@@ -40,7 +40,8 @@ class ProfileServiceTest {
 
     private ProfileRequest request(String name) {
         return new ProfileRequest(name, "010-1234-5678", LocalDate.of(1998, 4, 27), "서울시",
-                "https://github.com/hong", null, null, "OO대 컴퓨터공학", "인턴 6개월", "백엔드 개발자", "안녕하세요");
+                "https://github.com/hong", null, null, "OO대 컴퓨터공학", "인턴 6개월", "백엔드 개발자", "안녕하세요",
+                LocalDate.of(2025, 3, 1));
     }
 
     @Test
@@ -86,6 +87,7 @@ class ProfileServiceTest {
         assertThat(response.name()).isEqualTo("홍길순");
         assertThat(response.phone()).isEqualTo("010-1234-5678");
         assertThat(response.desiredJob()).isEqualTo("백엔드 개발자");
+        assertThat(response.jobSearchStartDate()).isEqualTo(LocalDate.of(2025, 3, 1));
     }
 
     @Test

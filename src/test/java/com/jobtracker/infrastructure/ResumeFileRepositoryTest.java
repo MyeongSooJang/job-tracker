@@ -93,7 +93,7 @@ class ResumeFileRepositoryTest {
         User user = saveUser();
         Profile profile = profileRepository.save(Profile.create(user));
         profile.update("홍길순", PersonalInfo.of("010-1234-5678", LocalDate.of(1998, 4, 27), "서울시",
-                "https://github.com/hong", null, null, "OO대", "인턴", "백엔드", "안녕하세요"));
+                "https://github.com/hong", null, null, "OO대", "인턴", "백엔드", "안녕하세요", null));
         flushAndClear();
 
         Profile found = profileRepository.findByUserId(user.getId()).orElseThrow();

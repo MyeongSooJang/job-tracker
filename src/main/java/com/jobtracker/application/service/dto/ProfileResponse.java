@@ -18,6 +18,7 @@ public record ProfileResponse(
         String career,
         String desiredJob,
         String introduction,
+        LocalDate jobSearchStartDate,
         ResumeResponse resume) {
 
     public static ProfileResponse of(Profile profile, ResumeResponse resume) {
@@ -35,6 +36,7 @@ public record ProfileResponse(
                 info.getCareer(),
                 info.getDesiredJob(),
                 info.getIntroduction(),
+                info.getJobSearchStartDate(),
                 resume);
     }
 }

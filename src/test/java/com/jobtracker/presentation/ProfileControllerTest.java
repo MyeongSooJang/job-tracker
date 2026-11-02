@@ -16,6 +16,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Map;
 
@@ -45,7 +46,7 @@ class ProfileControllerTest {
 
     private static ProfileResponse profileResponse(ResumeResponse resume) {
         return new ProfileResponse("hong@example.com", "홍길동", "010-1234-5678", null, null,
-                null, null, null, null, null, "백엔드 개발자", null, resume);
+                null, null, null, null, null, "백엔드 개발자", null, LocalDate.of(2025, 3, 1), resume);
     }
 
     @Test
@@ -57,6 +58,7 @@ class ProfileControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.email").value("hong@example.com"))
                 .andExpect(jsonPath("$.desiredJob").value("백엔드 개발자"))
+                .andExpect(jsonPath("$.jobSearchStartDate").value("2025-03-01"))
                 .andExpect(jsonPath("$.resume.fileName").value("이력서.pdf"))
                 .andExpect(jsonPath("$.resume.sizeBytes").value(1024));
     }
@@ -109,5 +111,54 @@ class ProfileControllerTest {
                         .content(objectMapper.writeValueAsString(Map.of("name", " "))))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
+    }
+
+    @Test
+    void PUT_me_profile_취업_준비_시작일을_저장한다() throws Exception {
+        given(profileService.updateMyProfile(eq(1L), any())).willReturn(profileResponse(null));
+
+        mockMvc.perform(put("/api/me/profile")
+                        .header("Authorization", BEARER)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(
+                                Map.of("name", "홍길동", "jobSearchStartDate", "2025-03-01"))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.jobSearchStartDate").value("2025-03-01"));
+    }
+
+    @Test
+    void PUT_me_profile_취업_준비_시작일이_미래이면_400을_반환한다() throws Exception {
+        String tomorrow = LocalDate.now().plusDays(1).toString();
+
+        mockMvc.perform(put("/api/me/profile")
+                        .header("Authorization", BEARER)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(
+                                Map.of("name", "홍길동", "jobSearchStartDate", tomorrow))))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
+    }
+
+    @Test
+    void PUT_me_profile_취업_준비_시작일이_오늘이면_저장한다() throws Exception {
+        given(profileService.updateMyProfile(eq(1L), any())).willReturn(profileResponse(null));
+
+        mockMvc.perform(put("/api/me/profile")
+                        .header("Authorization", BEARER)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(
+                                Map.of("name", "홍길동", "jobSearchStartDate", LocalDate.now().toString()))))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void PUT_me_profile_취업_준비_시작일을_생략해도_저장한다() throws Exception {
+        given(profileService.updateMyProfile(eq(1L), any())).willReturn(profileResponse(null));
+
+        mockMvc.perform(put("/api/me/profile")
+                        .header("Authorization", BEARER)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of("name", "홍길동"))))
+                .andExpect(status().isOk());
     }
 }

@@ -29,18 +29,21 @@ public class PersonalInfo {
     @Column(length = 2000)
     private String career;
 
+    private LocalDate jobSearchStartDate;
+
     private String desiredJob;
     @Column(length = 2000)
     private String introduction;
 
     public static PersonalInfo empty() {
-        return of(null, null, null, null, null, null, null, null, null, null);
+        return of(null, null, null, null, null, null, null, null, null, null, null);
     }
 
     public static PersonalInfo of(String phone, LocalDate birthDate, String address,
                                   String githubUrl, String blogUrl, String portfolioUrl,
                                   String education, String career,
-                                  String desiredJob, String introduction) {
+                                  String desiredJob, String introduction,
+                                  LocalDate jobSearchStartDate) {
         PersonalInfo info = new PersonalInfo();
         info.phone = phone;
         info.birthDate = birthDate;
@@ -52,6 +55,7 @@ public class PersonalInfo {
         info.career = career;
         info.desiredJob = desiredJob;
         info.introduction = introduction;
+        info.jobSearchStartDate = jobSearchStartDate;
         return info;
     }
 }

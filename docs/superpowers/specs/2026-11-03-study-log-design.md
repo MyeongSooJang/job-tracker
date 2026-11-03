@@ -28,9 +28,10 @@
 ## 백엔드 (`job-tracker`)
 
 ### 도메인 `domain/studylog`
-- `StudyLog` 엔티티: `user`(LAZY), `studyDate`, `content`(TEXT), `studyMinutes`. 유니크 `(user_id, study_date)`.
+- `StudyLog` 엔티티: `userId`(`Application`과 같은 방식의 Long), `studyDate`, `content`(TEXT), `studyMinutes`. 유니크 `(user_id, study_date)`.
   `create(user, date, content, minutes, today)` / `update(content, minutes)`. 검증(내용 공백, 시간 0~1440, 미래 날짜)은 엔티티가 맡는다.
-- `StudyLogs`(일급 컬렉션): 로그 묶음에서 통계를 계산한다. `currentStreak(today)`, `writtenDays()`, `minutesByDay(from, to)`. 서비스는 getter로 값을 꺼내 계산하지 않고 이 객체에 메시지만 보낸다.
+- `StudyLogs`(일급 컬렉션): `minutesByDay(from, to)`로 구간별 공부 시간을 빈 날 0분으로 채워 집계한다.
+- `StudyStreak`: 기록한 날짜 집합에서 `current(today)`로 연속 작성일을 계산한다(본문을 읽지 않도록 날짜만 조회). 서비스는 getter로 값을 꺼내 계산하지 않고 이 객체들에 메시지만 보낸다.
 - `StudyLogRepository`: `findByUserIdAndStudyDate`, `findByUserIdAndStudyDateBetween`, `findTop10ByUserIdOrderByStudyDateDesc`, 삭제.
 - `StudyLogJpaRepository`: `JpaRepository` + `StudyLogRepository` 동시 상속 (기존 패턴).
 - 오늘 날짜는 `Clock`을 주입해 얻는다(테스트에서 고정 가능).
@@ -39,12 +40,12 @@
 - `StudyLogService`: 클래스 `readOnly`, 쓰기만 `@Transactional`. 같은 날짜 기록이 있으면 `update`, 없으면 `create`.
 - `StudyLogController` `/api/me/study-logs` — 모든 조회는 userId로 한정해 타인 기록 접근 차단.
 - DTO: `StudyLogRequest`, `StudyLogResponse`, `StudyStatsResponse` (`service/dto`).
-- `ErrorCode`: `STUDY_LOG_NOT_FOUND`(404), `INVALID_STUDY_LOG`(400).
+- `ErrorCode`: `STUDY_LOG_NOT_FOUND`(404), `STUDY_CONTENT_REQUIRED`·`INVALID_STUDY_MINUTES`·`FUTURE_STUDY_DATE`(400). 프론트가 한글 메시지를 그대로 보여 주도록 사유별로 분리했다.
 
 ### API 계약 (두 저장소의 기준점)
 ```
 StudyLogRequest  { content: string(필수, ≤10000), studyMinutes?: number(0~1440, 기본 0) }
-StudyLog         { id, studyDate: "YYYY-MM-DD", content, studyMinutes, createdAt, updatedAt }
+StudyLog         { id, studyDate: "YYYY-MM-DD", content, studyMinutes }   // 갱신 시 flush 전에 응답이 만들어져 audit 시각은 제외
 StudyStats       { currentStreak: number, monthWrittenDays: number,
                    last7Days: [{ date: "YYYY-MM-DD", minutes: number }]  // 7개, 오래된 날짜부터 }
 
@@ -61,11 +62,11 @@ GET    /api/me/study-logs/stats          -> StudyStats
 운영 DB는 실제 서비스 중이고 `.env`(`PG*`)와 `psql`(PostgreSQL 18)로 접근 가능하다. 사용자가 "psql로 직접 생성 후 배포"를 선택했다.
 - **순서**: 엔티티 확정 → DDL 작성 → 로컬 검증 → **실행 직전 SQL을 보여 주고 사용자 확인** → 운영 DB에 실행 → 백엔드 PR 머지(배포).
 - 엔티티 매핑은 기존 방식(`@Column(columnDefinition = "TEXT")`, 컬럼명은 스네이크 케이스 기본 전략)과 같게 하고, 아래 DDL이 매핑과 어긋나지 않는지 로컬에서 `ddl-auto: update`로 생성한 스키마와 비교한다. 어긋나면 배포 시 Hibernate가 컬럼을 덧붙이거나 오류를 낼 수 있다.
-- DDL 초안 (엔티티 확정 후 최종 확인):
+- DDL 초안 (엔티티 확정 후 최종 확인). 다른 테이블(`applications`)처럼 `user_id`는 FK 없이 둔다:
 ```sql
 CREATE TABLE study_logs (
     id            BIGSERIAL PRIMARY KEY,
-    user_id       BIGINT       NOT NULL REFERENCES users(id),
+    user_id       BIGINT       NOT NULL,
     study_date    DATE         NOT NULL,
     content       TEXT         NOT NULL,
     study_minutes INTEGER      NOT NULL DEFAULT 0,

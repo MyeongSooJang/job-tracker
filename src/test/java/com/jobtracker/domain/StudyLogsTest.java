@@ -1,6 +1,5 @@
 package com.jobtracker.domain;
 
-import com.jobtracker.domain.studylog.DailyStudyMinutes;
 import com.jobtracker.domain.studylog.DailyStudySummary;
 import com.jobtracker.domain.studylog.StudyLog;
 import com.jobtracker.domain.studylog.StudyLogs;
@@ -21,41 +20,16 @@ class StudyLogsTest {
     }
 
     @Test
-    void 구간의_모든_날짜를_오래된_날짜부터_돌려준다() {
-        StudyLogs logs = new StudyLogs(List.of());
-
-        List<DailyStudyMinutes> result = logs.minutesByDay(TODAY.minusDays(6), TODAY);
-
-        assertThat(result).hasSize(7);
-        assertThat(result.get(0).date()).isEqualTo(TODAY.minusDays(6));
-        assertThat(result.get(6).date()).isEqualTo(TODAY);
-    }
-
-    @Test
-    void 기록이_없는_날은_0분으로_채운다() {
-        StudyLogs logs = new StudyLogs(List.of(log(0, 90), log(2, 30)));
-
-        List<DailyStudyMinutes> result = logs.minutesByDay(TODAY.minusDays(2), TODAY);
-
-        assertThat(result).extracting(DailyStudyMinutes::minutes).containsExactly(30, 0, 90);
-    }
-
-    @Test
-    void 구간_밖의_기록은_포함하지_않는다() {
-        StudyLogs logs = new StudyLogs(List.of(log(10, 200)));
-
-        List<DailyStudyMinutes> result = logs.minutesByDay(TODAY.minusDays(1), TODAY);
-
-        assertThat(result).extracting(DailyStudyMinutes::minutes).containsExactly(0, 0);
-    }
-
-    @Test
     void 같은_날_여러_글의_공부_시간은_합산한다() {
         StudyLogs logs = new StudyLogs(List.of(log(0, 60), log(0, 30), log(1, 45)));
 
         assertThat(logs.minutesOn(TODAY)).isEqualTo(90);
-        assertThat(logs.minutesByDay(TODAY.minusDays(1), TODAY))
-                .extracting(DailyStudyMinutes::minutes).containsExactly(45, 90);
+        assertThat(logs.minutesOn(TODAY.minusDays(1))).isEqualTo(45);
+    }
+
+    @Test
+    void 글이_없는_날의_공부_시간은_0이다() {
+        assertThat(new StudyLogs(List.of()).minutesOn(TODAY)).isEqualTo(0);
     }
 
     @Test

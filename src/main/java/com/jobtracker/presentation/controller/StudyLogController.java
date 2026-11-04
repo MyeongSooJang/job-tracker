@@ -1,6 +1,7 @@
 package com.jobtracker.presentation.controller;
 
 import com.jobtracker.application.service.StudyLogService;
+import com.jobtracker.application.service.dto.StudyLogCreateRequest;
 import com.jobtracker.application.service.dto.StudyLogRequest;
 import com.jobtracker.application.service.dto.StudyLogResponse;
 import com.jobtracker.application.service.dto.StudyStatsResponse;
@@ -12,7 +13,6 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
-import java.time.YearMonth;
 import java.util.List;
 
 @RestController
@@ -22,35 +22,36 @@ public class StudyLogController {
 
     private final StudyLogService studyLogService;
 
-    @PutMapping("/{date}")
-    public StudyLogResponse save(@AuthenticationPrincipal Long userId,
-                                 @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
-                                 @RequestBody @Valid StudyLogRequest request) {
-        return studyLogService.save(userId, date, request);
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    public StudyLogResponse create(@AuthenticationPrincipal Long userId,
+                                   @RequestBody @Valid StudyLogCreateRequest request) {
+        return studyLogService.create(userId, request);
     }
 
-    @GetMapping("/{date}")
-    public StudyLogResponse find(@AuthenticationPrincipal Long userId,
-                                 @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
-        return studyLogService.find(userId, date);
+    @PutMapping("/{id}")
+    public StudyLogResponse update(@AuthenticationPrincipal Long userId,
+                                   @PathVariable Long id,
+                                   @RequestBody @Valid StudyLogRequest request) {
+        return studyLogService.update(userId, id, request);
     }
 
-    @DeleteMapping("/{date}")
+    @GetMapping("/{id}")
+    public StudyLogResponse find(@AuthenticationPrincipal Long userId, @PathVariable Long id) {
+        return studyLogService.find(userId, id);
+    }
+
+    @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@AuthenticationPrincipal Long userId,
-                       @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
-        studyLogService.delete(userId, date);
+    public void delete(@AuthenticationPrincipal Long userId, @PathVariable Long id) {
+        studyLogService.delete(userId, id);
     }
 
     @GetMapping
-    public List<StudyLogResponse> findByMonth(@AuthenticationPrincipal Long userId,
-                                              @RequestParam @DateTimeFormat(pattern = "yyyy-MM") YearMonth month) {
-        return studyLogService.findByMonth(userId, month);
-    }
-
-    @GetMapping("/recent")
-    public List<StudyLogResponse> findRecent(@AuthenticationPrincipal Long userId) {
-        return studyLogService.findRecent(userId);
+    public List<StudyLogResponse> findRange(@AuthenticationPrincipal Long userId,
+                                            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+                                            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+        return studyLogService.findRange(userId, from, to);
     }
 
     @GetMapping("/stats")

@@ -17,7 +17,7 @@ class StudyLogsTest {
     private static final LocalDate TODAY = LocalDate.of(2026, 11, 3);
 
     private StudyLog log(int daysAgo, int minutes) {
-        return StudyLog.create(USER_ID, TODAY.minusDays(daysAgo), "공부", minutes, TODAY);
+        return StudyLog.create(USER_ID, TODAY.minusDays(daysAgo), "제목", "공부", minutes, TODAY);
     }
 
     @Test

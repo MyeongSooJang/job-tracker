@@ -7,14 +7,11 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.annotation.Import;
-import org.springframework.dao.DataIntegrityViolationException;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @DataJpaTest
 @Import(JpaConfig.class)
@@ -26,50 +23,69 @@ class StudyLogRepositoryTest {
 
     @Autowired StudyLogJpaRepository studyLogRepository;
 
-    private StudyLog save(Long userId, LocalDate date) {
+    private StudyLog save(Long userId, LocalDate date, String title) {
         // 미래 날짜 검증은 도메인 테스트에서 다루므로, 어떤 날짜든 저장할 수 있게 기록일을 오늘로 넘긴다.
-        return studyLogRepository.saveAndFlush(StudyLog.create(userId, date, "공부 내용", 60, date));
+        return studyLogRepository.saveAndFlush(StudyLog.create(userId, date, title, "공부 내용", 60, date));
+    }
+
+    private StudyLog save(Long userId, LocalDate date) {
+        return save(userId, date, "제목");
     }
 
     @Test
-    void 같은_사용자의_같은_날짜에는_기록을_두_개_저장할_수_없다() {
-        save(OWNER, TODAY);
+    void 같은_사용자가_같은_날짜에_여러_글을_저장할_수_있다() {
+        save(OWNER, TODAY, "아침");
+        save(OWNER, TODAY, "저녁");
 
-        assertThatThrownBy(() -> save(OWNER, TODAY)).isInstanceOf(DataIntegrityViolationException.class);
+        List<StudyLog> logs = studyLogRepository.findByUserIdAndStudyDateBetweenOrderByStudyDateDescIdDesc(
+                OWNER, TODAY, TODAY);
+
+        assertThat(logs).extracting(StudyLog::getTitle).containsExactly("저녁", "아침");
     }
 
     @Test
-    void 다른_사용자는_같은_날짜에_각자_기록할_수_있다() {
-        save(OWNER, TODAY);
-        save(OTHER, TODAY);
+    void 글_id와_사용자로_조회한다() {
+        StudyLog saved = save(OWNER, TODAY);
 
-        assertThat(studyLogRepository.findByUserIdAndStudyDate(OWNER, TODAY)).isPresent();
-        assertThat(studyLogRepository.findByUserIdAndStudyDate(OTHER, TODAY)).isPresent();
+        assertThat(studyLogRepository.findByIdAndUserId(saved.getId(), OWNER)).isPresent();
     }
 
     @Test
-    void 다른_사용자의_기록은_조회되지_않는다() {
-        save(OTHER, TODAY);
+    void 다른_사용자의_글은_id를_알아도_조회되지_않는다() {
+        StudyLog saved = save(OTHER, TODAY);
 
-        assertThat(studyLogRepository.findByUserIdAndStudyDate(OWNER, TODAY)).isEmpty();
+        assertThat(studyLogRepository.findByIdAndUserId(saved.getId(), OWNER)).isEmpty();
         assertThat(studyLogRepository.findStudyDatesByUserId(OWNER)).isEmpty();
-        assertThat(studyLogRepository.findTop10ByUserIdOrderByStudyDateDesc(OWNER)).isEmpty();
+        assertThat(studyLogRepository.findByUserIdAndStudyDateBetweenOrderByStudyDateDescIdDesc(
+                OWNER, TODAY.minusDays(30), TODAY)).isEmpty();
     }
 
     @Test
-    void 기간_조회는_양쪽_끝_날짜를_포함하고_날짜_오름차순이다() {
+    void 구간_조회는_양쪽_끝_날짜를_포함하고_최신_날짜부터_돌려준다() {
         save(OWNER, LocalDate.of(2026, 10, 31));
         save(OWNER, LocalDate.of(2026, 11, 30));
         save(OWNER, LocalDate.of(2026, 11, 1));
         save(OWNER, LocalDate.of(2026, 12, 1));
 
-        List<StudyLog> logs = studyLogRepository.findByUserIdAndStudyDateBetweenOrderByStudyDateAsc(
+        List<StudyLog> logs = studyLogRepository.findByUserIdAndStudyDateBetweenOrderByStudyDateDescIdDesc(
                 OWNER, LocalDate.of(2026, 11, 1), LocalDate.of(2026, 11, 30));
 
         assertThat(logs).extracting(StudyLog::getStudyDate)
-                .containsExactly(LocalDate.of(2026, 11, 1), LocalDate.of(2026, 11, 30));
+                .containsExactly(LocalDate.of(2026, 11, 30), LocalDate.of(2026, 11, 1));
     }
 
+    @Test
+    void 기록한_날짜는_하루에_여러_글이_있어도_한_번만_최신순으로_돌려준다() {
+        save(OWNER, LocalDate.of(2026, 11, 1));
+        save(OWNER, LocalDate.of(2026, 11, 3));
+        save(OWNER, LocalDate.of(2026, 11, 3));
+        save(OWNER, LocalDate.of(2026, 11, 2));
+
+        assertThat(studyLogRepository.findStudyDatesByUserId(OWNER)).containsExactly(
+                LocalDate.of(2026, 11, 3), LocalDate.of(2026, 11, 2), LocalDate.of(2026, 11, 1));
+    }
+
+    // Task 3에서 제거되는 메서드의 기존 동작을 유지하는지 확인한다.
     @Test
     void 기간_안의_기록_개수를_센다() {
         save(OWNER, LocalDate.of(2026, 10, 31));
@@ -81,26 +97,5 @@ class StudyLogRepositoryTest {
                 OWNER, LocalDate.of(2026, 11, 1), LocalDate.of(2026, 11, 30));
 
         assertThat(count).isEqualTo(2);
-    }
-
-    @Test
-    void 최근_기록은_최신_날짜부터_10건만_돌려준다() {
-        IntStream.range(0, 12).forEach(daysAgo -> save(OWNER, TODAY.minusDays(daysAgo)));
-
-        List<StudyLog> logs = studyLogRepository.findTop10ByUserIdOrderByStudyDateDesc(OWNER);
-
-        assertThat(logs).hasSize(10);
-        assertThat(logs.get(0).getStudyDate()).isEqualTo(TODAY);
-        assertThat(logs.get(9).getStudyDate()).isEqualTo(TODAY.minusDays(9));
-    }
-
-    @Test
-    void 기록한_날짜는_최신순으로_돌려준다() {
-        save(OWNER, LocalDate.of(2026, 11, 1));
-        save(OWNER, LocalDate.of(2026, 11, 3));
-        save(OWNER, LocalDate.of(2026, 11, 2));
-
-        assertThat(studyLogRepository.findStudyDatesByUserId(OWNER)).containsExactly(
-                LocalDate.of(2026, 11, 3), LocalDate.of(2026, 11, 2), LocalDate.of(2026, 11, 1));
     }
 }

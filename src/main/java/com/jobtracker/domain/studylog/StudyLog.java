@@ -15,12 +15,13 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "study_logs",
-        uniqueConstraints = @UniqueConstraint(name = "uk_study_logs_user_date", columnNames = {"user_id", "study_date"}))
+        indexes = @Index(name = "idx_study_logs_user_date", columnList = "user_id, study_date"))
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @EntityListeners(AuditingEntityListener.class)
 public class StudyLog {
 
+    private static final int MAX_TITLE_LENGTH = 100;
     private static final int MIN_MINUTES = 0;
     private static final int MAX_MINUTES = 24 * 60;
 
@@ -33,6 +34,9 @@ public class StudyLog {
 
     @Column(nullable = false)
     private LocalDate studyDate;
+
+    @Column(nullable = false, length = MAX_TITLE_LENGTH)
+    private String title;
 
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
@@ -47,24 +51,29 @@ public class StudyLog {
     @LastModifiedDate
     private LocalDateTime updatedAt;
 
-    public static StudyLog create(Long userId, LocalDate studyDate, String content, int studyMinutes, LocalDate today) {
+    public static StudyLog create(Long userId, LocalDate studyDate, String title, String content,
+                                  int studyMinutes, LocalDate today) {
         if (studyDate.isAfter(today)) {
             throw new BusinessException(ErrorCode.FUTURE_STUDY_DATE);
         }
         StudyLog studyLog = new StudyLog();
         studyLog.userId = userId;
         studyLog.studyDate = studyDate;
-        studyLog.write(content, studyMinutes);
+        studyLog.write(title, content, studyMinutes);
         return studyLog;
     }
 
-    public void write(String content, int studyMinutes) {
+    public void write(String title, String content, int studyMinutes) {
+        if (title == null || title.isBlank() || title.length() > MAX_TITLE_LENGTH) {
+            throw new BusinessException(ErrorCode.STUDY_TITLE_REQUIRED);
+        }
         if (content == null || content.isBlank()) {
             throw new BusinessException(ErrorCode.STUDY_CONTENT_REQUIRED);
         }
         if (studyMinutes < MIN_MINUTES || studyMinutes > MAX_MINUTES) {
             throw new BusinessException(ErrorCode.INVALID_STUDY_MINUTES);
         }
+        this.title = title;
         this.content = content;
         this.studyMinutes = studyMinutes;
     }

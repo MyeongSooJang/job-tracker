@@ -67,6 +67,11 @@ class StudyStreakTest {
     }
 
     @Test
+    void 같은_날짜가_중복되어도_최장_연속_작성일은_하루로_센다() {
+        assertThat(streakOf(0, 0, 1).longest()).isEqualTo(2);
+    }
+
+    @Test
     void 월을_넘어서도_최장_연속을_이어서_센다() {
         StudyStreak streak = StudyStreak.of(List.of(
                 LocalDate.of(2026, 10, 31), LocalDate.of(2026, 11, 1), LocalDate.of(2026, 11, 2)));

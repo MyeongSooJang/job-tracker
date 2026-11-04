@@ -85,15 +85,15 @@ class StudyLogRepositoryTest {
                 LocalDate.of(2026, 11, 3), LocalDate.of(2026, 11, 2), LocalDate.of(2026, 11, 1));
     }
 
-    // Task 3에서 제거되는 메서드의 기존 동작을 유지하는지 확인한다.
     @Test
-    void 기간_안의_기록_개수를_센다() {
+    void 기간_안에서_글이_있는_날짜_수를_중복_없이_센다() {
         save(OWNER, LocalDate.of(2026, 10, 31));
+        save(OWNER, LocalDate.of(2026, 11, 1));
         save(OWNER, LocalDate.of(2026, 11, 1));
         save(OWNER, LocalDate.of(2026, 11, 3));
         save(OTHER, LocalDate.of(2026, 11, 2));
 
-        long count = studyLogRepository.countByUserIdAndStudyDateBetween(
+        long count = studyLogRepository.countStudyDatesBetween(
                 OWNER, LocalDate.of(2026, 11, 1), LocalDate.of(2026, 11, 30));
 
         assertThat(count).isEqualTo(2);

@@ -2,11 +2,11 @@ package com.jobtracker.presentation;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jobtracker.application.service.StudyLogService;
+import com.jobtracker.application.service.dto.HeatmapDayResponse;
 import com.jobtracker.application.service.dto.StudyLogCreateRequest;
 import com.jobtracker.application.service.dto.StudyLogRequest;
 import com.jobtracker.application.service.dto.StudyLogResponse;
 import com.jobtracker.application.service.dto.StudyStatsResponse;
-import com.jobtracker.domain.studylog.DailyStudyMinutes;
 import com.jobtracker.domain.user.TokenProvider;
 import com.jobtracker.global.config.SecurityConfig;
 import com.jobtracker.global.exception.BusinessException;
@@ -184,18 +184,44 @@ class StudyLogControllerTest {
                 .andExpect(status().isBadRequest());
     }
 
-    // Task 3에서 응답 모양이 바뀌는 통계의 기존 계약을 유지한다.
     @Test
-    void GET_stats는_연속_작성일과_최근_7일_공부_시간을_반환한다() throws Exception {
-        given(studyLogService.stats(1L)).willReturn(
-                new StudyStatsResponse(3, 5, List.of(new DailyStudyMinutes(DATE, 90))));
+    void GET_stats는_연속_작성일과_최장_연속과_오늘_공부_시간을_반환한다() throws Exception {
+        given(studyLogService.stats(1L)).willReturn(new StudyStatsResponse(3, 21, 5, 90));
 
         mockMvc.perform(get("/api/me/study-logs/stats").header("Authorization", BEARER))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.currentStreak").value(3))
+                .andExpect(jsonPath("$.longestStreak").value(21))
                 .andExpect(jsonPath("$.monthWrittenDays").value(5))
-                .andExpect(jsonPath("$.last7Days[0].date").value("2026-11-03"))
-                .andExpect(jsonPath("$.last7Days[0].minutes").value(90));
+                .andExpect(jsonPath("$.todayMinutes").value(90))
+                .andExpect(jsonPath("$.last7Days").doesNotExist());
+    }
+
+    @Test
+    void GET_heatmap은_글이_있는_날의_글_수와_공부_시간을_반환한다() throws Exception {
+        given(studyLogService.heatmap(1L, LocalDate.of(2025, 11, 3), DATE))
+                .willReturn(List.of(new HeatmapDayResponse(DATE, 2, 90)));
+
+        mockMvc.perform(get("/api/me/study-logs/heatmap")
+                        .param("from", "2025-11-03").param("to", "2026-11-03")
+                        .header("Authorization", BEARER))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].date").value("2026-11-03"))
+                .andExpect(jsonPath("$[0].count").value(2))
+                .andExpect(jsonPath("$[0].minutes").value(90));
+    }
+
+    @Test
+    void GET_heatmap은_기간이_상한을_넘으면_400을_반환한다() throws Exception {
+        given(studyLogService.heatmap(1L, LocalDate.of(2020, 1, 1), DATE))
+                .willThrow(new BusinessException(ErrorCode.INVALID_STUDY_RANGE));
+
+        mockMvc.perform(get("/api/me/study-logs/heatmap")
+                        .param("from", "2020-01-01").param("to", "2026-11-03")
+                        .header("Authorization", BEARER))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("INVALID_STUDY_RANGE"));
     }
 
     @Test

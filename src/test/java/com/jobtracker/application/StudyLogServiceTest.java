@@ -1,11 +1,11 @@
 package com.jobtracker.application;
 
 import com.jobtracker.application.service.StudyLogService;
+import com.jobtracker.application.service.dto.HeatmapDayResponse;
 import com.jobtracker.application.service.dto.StudyLogCreateRequest;
 import com.jobtracker.application.service.dto.StudyLogRequest;
 import com.jobtracker.application.service.dto.StudyLogResponse;
 import com.jobtracker.application.service.dto.StudyStatsResponse;
-import com.jobtracker.domain.studylog.DailyStudyMinutes;
 import com.jobtracker.domain.studylog.StudyLog;
 import com.jobtracker.domain.studylog.StudyLogRepository;
 import com.jobtracker.global.exception.ErrorCode;
@@ -168,21 +168,67 @@ class StudyLogServiceTest {
     }
 
     @Test
-    void 통계는_연속_작성일과_이번_달_작성_일수와_최근_7일_공부_시간을_돌려준다() {
+    void 통계는_현재_연속과_최장_연속과_이번_달_작성_일수와_오늘_공부_시간을_돌려준다() {
         LocalDate yesterday = TODAY.minusDays(1);
-        LocalDate weekStart = TODAY.minusDays(6);
-        given(studyLogRepository.findStudyDatesByUserId(USER_ID)).willReturn(List.of(TODAY, yesterday));
-        given(studyLogRepository.findByUserIdAndStudyDateBetweenOrderByStudyDateAsc(USER_ID, weekStart, TODAY))
-                .willReturn(List.of(log(yesterday, 30), log(TODAY, 90)));
-        given(studyLogRepository.countByUserIdAndStudyDateBetween(
+        // 최근 2일 연속(오늘 포함), 과거에 4일 연속
+        given(studyLogRepository.findStudyDatesByUserId(USER_ID)).willReturn(List.of(
+                TODAY, yesterday,
+                TODAY.minusDays(10), TODAY.minusDays(11), TODAY.minusDays(12), TODAY.minusDays(13)));
+        given(studyLogRepository.findByUserIdAndStudyDateBetweenOrderByStudyDateDescIdDesc(USER_ID, TODAY, TODAY))
+                .willReturn(List.of(log(TODAY, 30), log(TODAY, 60)));
+        given(studyLogRepository.countStudyDatesBetween(
                 USER_ID, LocalDate.of(2026, 11, 1), LocalDate.of(2026, 11, 30))).willReturn(2L);
 
         StudyStatsResponse stats = studyLogService.stats(USER_ID);
 
         assertThat(stats.currentStreak()).isEqualTo(2);
+        assertThat(stats.longestStreak()).isEqualTo(4);
         assertThat(stats.monthWrittenDays()).isEqualTo(2);
-        assertThat(stats.last7Days()).hasSize(7);
-        assertThat(stats.last7Days()).extracting(DailyStudyMinutes::minutes)
-                .containsExactly(0, 0, 0, 0, 0, 30, 90);
+        assertThat(stats.todayMinutes()).isEqualTo(90);
+    }
+
+    @Test
+    void 오늘_쓴_글이_없으면_오늘_공부_시간은_0이다() {
+        given(studyLogRepository.findStudyDatesByUserId(USER_ID)).willReturn(List.of());
+        given(studyLogRepository.findByUserIdAndStudyDateBetweenOrderByStudyDateDescIdDesc(USER_ID, TODAY, TODAY))
+                .willReturn(List.of());
+        given(studyLogRepository.countStudyDatesBetween(
+                USER_ID, LocalDate.of(2026, 11, 1), LocalDate.of(2026, 11, 30))).willReturn(0L);
+
+        StudyStatsResponse stats = studyLogService.stats(USER_ID);
+
+        assertThat(stats.todayMinutes()).isZero();
+        assertThat(stats.currentStreak()).isZero();
+        assertThat(stats.longestStreak()).isZero();
+    }
+
+    @Test
+    void 잔디는_글이_있는_날만_글_수와_공부_시간_합계로_돌려준다() {
+        LocalDate from = TODAY.minusDays(30);
+        LocalDate twoDaysAgo = TODAY.minusDays(2);
+        given(studyLogRepository.findByUserIdAndStudyDateBetweenOrderByStudyDateDescIdDesc(USER_ID, from, TODAY))
+                .willReturn(List.of(log(TODAY, 60), log(TODAY, 30), log(twoDaysAgo, 20)));
+
+        List<HeatmapDayResponse> heatmap = studyLogService.heatmap(USER_ID, from, TODAY);
+
+        assertThat(heatmap).containsExactly(
+                new HeatmapDayResponse(twoDaysAgo, 1, 20),
+                new HeatmapDayResponse(TODAY, 2, 90));
+    }
+
+    @Test
+    void 잔디_조회는_400일을_넘으면_거부한다() {
+        assertErrorCode(
+                () -> studyLogService.heatmap(USER_ID, TODAY.minusDays(400), TODAY),
+                ErrorCode.INVALID_STUDY_RANGE);
+    }
+
+    @Test
+    void 잔디_조회는_400일까지_허용한다() {
+        LocalDate from = TODAY.minusDays(399);
+        given(studyLogRepository.findByUserIdAndStudyDateBetweenOrderByStudyDateDescIdDesc(USER_ID, from, TODAY))
+                .willReturn(List.of());
+
+        assertThat(studyLogService.heatmap(USER_ID, from, TODAY)).isEmpty();
     }
 }

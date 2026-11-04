@@ -1,6 +1,7 @@
 package com.jobtracker.presentation.controller;
 
 import com.jobtracker.application.service.StudyLogService;
+import com.jobtracker.application.service.dto.HeatmapDayResponse;
 import com.jobtracker.application.service.dto.StudyLogCreateRequest;
 import com.jobtracker.application.service.dto.StudyLogRequest;
 import com.jobtracker.application.service.dto.StudyLogResponse;
@@ -52,6 +53,13 @@ public class StudyLogController {
                                             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
                                             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
         return studyLogService.findRange(userId, from, to);
+    }
+
+    @GetMapping("/heatmap")
+    public List<HeatmapDayResponse> heatmap(@AuthenticationPrincipal Long userId,
+                                            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+                                            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+        return studyLogService.heatmap(userId, from, to);
     }
 
     @GetMapping("/stats")

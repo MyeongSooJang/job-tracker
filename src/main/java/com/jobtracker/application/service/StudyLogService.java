@@ -1,5 +1,6 @@
 package com.jobtracker.application.service;
 
+import com.jobtracker.application.service.dto.HeatmapDayResponse;
 import com.jobtracker.application.service.dto.StudyLogCreateRequest;
 import com.jobtracker.application.service.dto.StudyLogRequest;
 import com.jobtracker.application.service.dto.StudyLogResponse;
@@ -25,7 +26,7 @@ import java.util.List;
 @Transactional(readOnly = true)
 public class StudyLogService {
 
-    private static final int CHART_DAYS = 7;
+    private static final int MAX_HEATMAP_DAYS = 400;
     private static final int MAX_LIST_DAYS = 62;
 
     private final StudyLogRepository studyLogRepository;
@@ -61,19 +62,25 @@ public class StudyLogService {
         studyLogRepository.delete(findOrThrow(userId, id));
     }
 
+    public List<HeatmapDayResponse> heatmap(Long userId, LocalDate from, LocalDate to) {
+        StudyPeriod period = StudyPeriod.of(from, to, MAX_HEATMAP_DAYS);
+        StudyLogs logs = new StudyLogs(studyLogRepository
+                .findByUserIdAndStudyDateBetweenOrderByStudyDateDescIdDesc(userId, period.from(), period.to()));
+        return logs.dailySummaries().stream().map(HeatmapDayResponse::from).toList();
+    }
+
     public StudyStatsResponse stats(Long userId) {
         LocalDate today = today();
-        LocalDate chartStart = today.minusDays(CHART_DAYS - 1);
         YearMonth month = YearMonth.from(today);
 
         StudyStreak streak = StudyStreak.of(studyLogRepository.findStudyDatesByUserId(userId));
-        StudyLogs chartLogs = new StudyLogs(
-                studyLogRepository.findByUserIdAndStudyDateBetweenOrderByStudyDateAsc(userId, chartStart, today));
+        StudyLogs todayLogs = new StudyLogs(studyLogRepository
+                .findByUserIdAndStudyDateBetweenOrderByStudyDateDescIdDesc(userId, today, today));
         long monthWrittenDays = studyLogRepository
-                .countByUserIdAndStudyDateBetween(userId, month.atDay(1), month.atEndOfMonth());
+                .countStudyDatesBetween(userId, month.atDay(1), month.atEndOfMonth());
 
-        return new StudyStatsResponse(streak.current(today), (int) monthWrittenDays,
-                chartLogs.minutesByDay(chartStart, today));
+        return new StudyStatsResponse(streak.current(today), streak.longest(),
+                (int) monthWrittenDays, todayLogs.minutesOn(today));
     }
 
     private StudyLog findOrThrow(Long userId, Long id) {

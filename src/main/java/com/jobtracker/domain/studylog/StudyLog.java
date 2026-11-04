@@ -69,7 +69,11 @@ public class StudyLog {
         this.studyMinutes = studyMinutes;
     }
 
+    public boolean isOn(LocalDate date) {
+        return studyDate.equals(date);
+    }
+
     public int minutesOn(LocalDate date) {
-        return studyDate.equals(date) ? studyMinutes : 0;
+        return isOn(date) ? studyMinutes : 0;
     }
 }

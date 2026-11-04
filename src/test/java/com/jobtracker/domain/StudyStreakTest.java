@@ -49,4 +49,28 @@ class StudyStreakTest {
 
         assertThat(streak.current(TODAY)).isEqualTo(4);
     }
+
+    @Test
+    void 기록이_없으면_최장_연속_작성일은_0이다() {
+        assertThat(StudyStreak.of(List.of()).longest()).isZero();
+    }
+
+    @Test
+    void 가장_긴_연속_구간의_길이를_돌려준다() {
+        // 0,1 (2일) / 5,6,7,8 (4일) / 12 (1일)
+        assertThat(streakOf(0, 1, 5, 6, 7, 8, 12).longest()).isEqualTo(4);
+    }
+
+    @Test
+    void 최장_연속은_현재_연속과_무관하게_과거_구간도_센다() {
+        assertThat(streakOf(10, 11, 12, 13, 14).longest()).isEqualTo(5);
+    }
+
+    @Test
+    void 월을_넘어서도_최장_연속을_이어서_센다() {
+        StudyStreak streak = StudyStreak.of(List.of(
+                LocalDate.of(2026, 10, 31), LocalDate.of(2026, 11, 1), LocalDate.of(2026, 11, 2)));
+
+        assertThat(streak.longest()).isEqualTo(3);
+    }
 }

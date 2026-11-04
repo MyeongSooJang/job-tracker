@@ -26,4 +26,22 @@ public class StudyStreak {
         }
         return days;
     }
+
+    // 연속 구간의 시작일(바로 전날이 기록 없는 날)에서만 세기 시작해 모든 날짜를 한 번씩만 지난다.
+    public int longest() {
+        int longest = 0;
+        for (LocalDate date : writtenDates) {
+            if (writtenDates.contains(date.minusDays(1))) {
+                continue;
+            }
+            int length = 1;
+            LocalDate next = date.plusDays(1);
+            while (writtenDates.contains(next)) {
+                length++;
+                next = next.plusDays(1);
+            }
+            longest = Math.max(longest, length);
+        }
+        return longest;
+    }
 }

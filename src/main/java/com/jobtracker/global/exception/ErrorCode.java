@@ -33,7 +33,13 @@ public enum ErrorCode {
     INVALID_STUDY_MINUTES(HttpStatus.BAD_REQUEST, "공부 시간은 0~1440분 사이여야 합니다."),
     FUTURE_STUDY_DATE(HttpStatus.BAD_REQUEST, "미래 날짜에는 기록할 수 없습니다."),
     STUDY_TITLE_REQUIRED(HttpStatus.BAD_REQUEST, "제목을 1~100자로 입력해주세요."),
-    INVALID_STUDY_RANGE(HttpStatus.BAD_REQUEST, "조회 기간이 올바르지 않습니다.");
+    INVALID_STUDY_RANGE(HttpStatus.BAD_REQUEST, "조회 기간이 올바르지 않습니다."),
+    EMAIL_NOT_VERIFIED(HttpStatus.BAD_REQUEST, "이메일 인증이 필요합니다."),
+    INVALID_VERIFICATION_CODE(HttpStatus.BAD_REQUEST, "인증 코드가 올바르지 않습니다."),
+    VERIFICATION_EXPIRED(HttpStatus.BAD_REQUEST, "인증 코드가 만료되었거나 요청되지 않았습니다."),
+    VERIFICATION_ATTEMPTS_EXCEEDED(HttpStatus.BAD_REQUEST, "인증 코드를 5회 틀렸습니다. 새 코드를 요청해주세요."),
+    VERIFICATION_TOO_FREQUENT(HttpStatus.TOO_MANY_REQUESTS, "인증 코드는 60초에 한 번만 요청할 수 있습니다."),
+    MAIL_SEND_FAILED(HttpStatus.BAD_GATEWAY, "인증 메일을 보내지 못했습니다. 잠시 후 다시 시도해주세요.");
 
     private final HttpStatus httpStatus;
     private final String message;

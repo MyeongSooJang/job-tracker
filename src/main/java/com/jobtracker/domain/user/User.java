@@ -48,11 +48,16 @@ public class User {
         return email == null ? "" : email.trim().toLowerCase();
     }
 
-    public static User register(String email, String name, String rawPassword, PasswordHasher hasher) {
+    public static String requireValidEmail(String email) {
         String normalizedEmail = normalizeEmail(email);
         if (!EMAIL_PATTERN.matcher(normalizedEmail).matches()) {
             throw new BusinessException(ErrorCode.INVALID_EMAIL);
         }
+        return normalizedEmail;
+    }
+
+    public static User register(String email, String name, String rawPassword, PasswordHasher hasher) {
+        String normalizedEmail = requireValidEmail(email);
         if (rawPassword == null || rawPassword.length() < MIN_PASSWORD_LENGTH) {
             throw new BusinessException(ErrorCode.INVALID_PASSWORD);
         }

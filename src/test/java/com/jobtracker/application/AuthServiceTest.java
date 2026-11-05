@@ -4,6 +4,7 @@ import com.jobtracker.application.service.AuthService;
 import com.jobtracker.application.service.dto.LoginRequest;
 import com.jobtracker.application.service.dto.SignupRequest;
 import com.jobtracker.application.service.dto.TokenResponse;
+import com.jobtracker.domain.FakeEmailVerificationStore;
 import com.jobtracker.domain.FakePasswordHasher;
 import com.jobtracker.domain.profile.ProfileRepository;
 import com.jobtracker.domain.user.PasswordHasher;
@@ -35,15 +36,18 @@ class AuthServiceTest {
     @Mock TokenProvider tokenProvider;
 
     private final PasswordHasher passwordHasher = new FakePasswordHasher();
+    private final FakeEmailVerificationStore verificationStore = new FakeEmailVerificationStore();
     private AuthService authService;
 
     @BeforeEach
     void setUp() {
-        authService = new AuthService(userRepository, profileRepository, passwordHasher, tokenProvider);
+        authService = new AuthService(userRepository, profileRepository, passwordHasher, tokenProvider,
+                verificationStore);
     }
 
     @Test
     void signup_회원가입하면_프로필도_함께_생성하고_토큰을_발급한다() {
+        verificationStore.markVerified("hong@example.com");
         given(userRepository.existsByEmail("hong@example.com")).willReturn(false);
         given(userRepository.save(any())).willAnswer(invocation -> invocation.getArgument(0));
         given(tokenProvider.issue(any())).willReturn("jwt-token");
@@ -52,6 +56,29 @@ class AuthServiceTest {
 
         assertThat(response.accessToken()).isEqualTo("jwt-token");
         verify(profileRepository).save(any());
+    }
+
+    @Test
+    void signup_가입에_성공하면_인증_완료_상태를_지운다() {
+        verificationStore.markVerified("hong@example.com");
+        given(userRepository.existsByEmail("hong@example.com")).willReturn(false);
+        given(userRepository.save(any())).willAnswer(invocation -> invocation.getArgument(0));
+        given(tokenProvider.issue(any())).willReturn("jwt-token");
+
+        authService.signup(new SignupRequest("hong@example.com", "홍길동", "password1"));
+
+        assertThat(verificationStore.isVerified("hong@example.com")).isFalse();
+    }
+
+    @Test
+    void signup_이메일_인증을_받지_않았으면_가입할_수_없다() {
+        given(userRepository.existsByEmail("hong@example.com")).willReturn(false);
+
+        assertThatThrownBy(() -> authService.signup(new SignupRequest("hong@example.com", "홍길동", "password1")))
+                .isInstanceOfSatisfying(BusinessException.class,
+                        e -> assertThat(e.getErrorCode()).isEqualTo(ErrorCode.EMAIL_NOT_VERIFIED));
+        verify(userRepository, never()).save(any());
+        verify(profileRepository, never()).save(any());
     }
 
     @Test

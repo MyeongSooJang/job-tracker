@@ -4,17 +4,13 @@ import com.jobtracker.application.service.ResumeService;
 import com.jobtracker.application.service.dto.ResumeDownload;
 import com.jobtracker.application.service.dto.ResumeResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ContentDisposition;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 
 @RestController
 @RequestMapping("/api/me/resume")
@@ -30,15 +26,8 @@ public class ResumeController {
     }
 
     @GetMapping
-    public ResponseEntity<byte[]> download(@AuthenticationPrincipal Long userId) {
-        ResumeDownload resume = resumeService.download(userId);
-        return ResponseEntity.ok()
-                .contentType(MediaType.APPLICATION_PDF)
-                .header(HttpHeaders.CONTENT_DISPOSITION, ContentDisposition.attachment()
-                        .filename(resume.fileName(), StandardCharsets.UTF_8)
-                        .build()
-                        .toString())
-                .body(resume.content());
+    public ResumeDownload download(@AuthenticationPrincipal Long userId) {
+        return resumeService.download(userId);
     }
 
     @DeleteMapping

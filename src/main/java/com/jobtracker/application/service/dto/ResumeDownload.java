@@ -1,3 +1,5 @@
 package com.jobtracker.application.service.dto;
 
-public record ResumeDownload(String fileName, byte[] content) {}
+import java.time.Instant;
+
+public record ResumeDownload(String url, String fileName, Instant expiresAt) {}

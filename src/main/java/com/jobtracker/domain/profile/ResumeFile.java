@@ -13,6 +13,8 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.Optional;
+import java.util.UUID;
 
 @Entity
 @Table(name = "resume_files")
@@ -23,6 +25,7 @@ public class ResumeFile {
 
     public static final int MAX_SIZE_BYTES = 5 * 1024 * 1024;
     private static final String DEFAULT_FILE_NAME = "resume.pdf";
+    private static final String CONTENT_TYPE = "application/pdf";
     private static final byte[] PDF_MAGIC = "%PDF-".getBytes(StandardCharsets.US_ASCII);
 
     @Id
@@ -39,24 +42,69 @@ public class ResumeFile {
     @Column(nullable = false)
     private long sizeBytes;
 
-    @Column(nullable = false, length = MAX_SIZE_BYTES)
-    private byte[] content;
+    // S3 이전이 끝나기 전까지 null일 수 있다. 이전이 끝나면(PR 2) NOT NULL로 바꾼다.
+    @Column(name = "object_key")
+    private String objectKey;
+
+    @Column(name = "content_type")
+    private String contentType;
+
+    // S3 이전 전의 기존 데이터. 이전이 끝나면(PR 2) 컬럼과 함께 제거한다.
+    @Column(name = "content", length = MAX_SIZE_BYTES)
+    private byte[] legacyContent;
 
     @LastModifiedDate
     private LocalDateTime updatedAt;
 
-    public static ResumeFile upload(User user, String fileName, byte[] content) {
+    public static ResumeFile upload(User user, String fileName, byte[] content, FileStorage storage) {
         ResumeFile resume = new ResumeFile();
         resume.user = user;
-        resume.replace(fileName, content);
+        resume.replace(fileName, content, storage);
         return resume;
     }
 
-    public void replace(String fileName, byte[] content) {
+    // 새 객체를 새 키로 올린 뒤 필드를 바꾼다. 검증이나 업로드가 실패하면 기존 상태를 유지한다.
+    // 이전 객체는 지우지 않고 키만 돌려준다. DB 커밋 뒤에 호출한 쪽이 지운다.
+    public Optional<String> replace(String fileName, byte[] content, FileStorage storage) {
         validate(content);
+        String newKey = newObjectKey();
+        storage.put(newKey, content, CONTENT_TYPE);
+
+        Optional<String> previousKey = Optional.ofNullable(this.objectKey);
         this.fileName = sanitize(fileName);
         this.sizeBytes = content.length;
-        this.content = content;
+        this.objectKey = newKey;
+        this.contentType = CONTENT_TYPE;
+        this.legacyContent = null;
+        return previousKey;
+    }
+
+    public PresignedUrl downloadUrl(FileStorage storage) {
+        if (objectKey == null) {
+            throw new BusinessException(ErrorCode.RESUME_NOT_FOUND);
+        }
+        return storage.presignedDownloadUrl(objectKey, fileName);
+    }
+
+    public void deleteFrom(FileStorage storage) {
+        if (objectKey != null) {
+            storage.delete(objectKey);
+        }
+    }
+
+    // DB에 저장돼 있던 기존 내용을 S3로 옮긴다. 이미 옮겼거나 옮길 내용이 없으면 아무것도 하지 않는다.
+    public void migrateTo(FileStorage storage) {
+        if (objectKey != null || legacyContent == null) {
+            return;
+        }
+        String key = newObjectKey();
+        storage.put(key, legacyContent, CONTENT_TYPE);
+        this.objectKey = key;
+        this.contentType = CONTENT_TYPE;
+    }
+
+    private String newObjectKey() {
+        return "resumes/" + user.getId() + "/" + UUID.randomUUID() + ".pdf";
     }
 
     private static void validate(byte[] content) {

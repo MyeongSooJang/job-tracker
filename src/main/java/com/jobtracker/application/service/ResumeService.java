@@ -2,12 +2,15 @@ package com.jobtracker.application.service;
 
 import com.jobtracker.application.service.dto.ResumeDownload;
 import com.jobtracker.application.service.dto.ResumeResponse;
+import com.jobtracker.domain.profile.FileStorage;
+import com.jobtracker.domain.profile.PresignedUrl;
 import com.jobtracker.domain.profile.ResumeFile;
 import com.jobtracker.domain.profile.ResumeFileRepository;
 import com.jobtracker.domain.user.User;
 import com.jobtracker.domain.user.UserRepository;
 import com.jobtracker.global.exception.BusinessException;
 import com.jobtracker.global.exception.ErrorCode;
+import com.jobtracker.global.transaction.AfterCommit;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,26 +22,35 @@ public class ResumeService {
 
     private final ResumeFileRepository resumeFileRepository;
     private final UserRepository userRepository;
+    private final FileStorage fileStorage;
 
     @Transactional
     public ResumeResponse upload(Long userId, String fileName, byte[] content) {
         ResumeFile resume = resumeFileRepository.findByUserId(userId)
-                .map(existing -> {
-                    existing.replace(fileName, content);
-                    return existing;
-                })
-                .orElseGet(() -> resumeFileRepository.save(ResumeFile.upload(findUser(userId), fileName, content)));
+                .map(existing -> replace(existing, fileName, content))
+                .orElseGet(() -> resumeFileRepository.save(
+                        ResumeFile.upload(findUser(userId), fileName, content, fileStorage)));
         return ResumeResponse.from(resume);
     }
 
     public ResumeDownload download(Long userId) {
         ResumeFile resume = findResume(userId);
-        return new ResumeDownload(resume.getFileName(), resume.getContent());
+        PresignedUrl link = resume.downloadUrl(fileStorage);
+        return new ResumeDownload(link.url(), resume.getFileName(), link.expiresAt());
     }
 
     @Transactional
     public void delete(Long userId) {
-        resumeFileRepository.delete(findResume(userId));
+        ResumeFile resume = findResume(userId);
+        resumeFileRepository.delete(resume);
+        AfterCommit.runQuietly("이력서 객체 삭제", () -> resume.deleteFrom(fileStorage));
+    }
+
+    private ResumeFile replace(ResumeFile resume, String fileName, byte[] content) {
+        resume.replace(fileName, content, fileStorage)
+                .ifPresent(previousKey ->
+                        AfterCommit.runQuietly("이전 이력서 객체 삭제", () -> fileStorage.delete(previousKey)));
+        return resume;
     }
 
     private ResumeFile findResume(Long userId) {

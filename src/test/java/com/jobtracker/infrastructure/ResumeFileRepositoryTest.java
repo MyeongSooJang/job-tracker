@@ -1,5 +1,6 @@
 package com.jobtracker.infrastructure;
 
+import com.jobtracker.domain.FakeFileStorage;
 import com.jobtracker.domain.FakePasswordHasher;
 import com.jobtracker.domain.profile.PersonalInfo;
 import com.jobtracker.domain.profile.Profile;
@@ -30,6 +31,8 @@ class ResumeFileRepositoryTest {
     @Autowired ResumeFileRepository resumeFileRepository;
     @Autowired EntityManager em;
 
+    private final FakeFileStorage storage = new FakeFileStorage();
+
     private User saveUser() {
         return userRepository.save(User.register("hong@example.com", "홍길동", "password1", new FakePasswordHasher()));
     }
@@ -40,15 +43,17 @@ class ResumeFileRepositoryTest {
     }
 
     @Test
-    void 이력서_바이트를_저장하고_그대로_읽어온다() {
+    void 이력서의_파일명_키_콘텐츠_타입을_저장하고_읽어온다() {
         User user = saveUser();
-        byte[] content = "%PDF-1.7 \u0000\u0001ÿ binary".getBytes(StandardCharsets.ISO_8859_1);
-        resumeFileRepository.save(ResumeFile.upload(user, "이력서.pdf", content));
+        ResumeFile saved = resumeFileRepository.save(ResumeFile.upload(user, "이력서.pdf",
+                "%PDF-1.7 body".getBytes(StandardCharsets.US_ASCII), storage));
+        String objectKey = saved.getObjectKey();
         flushAndClear();
 
         ResumeFile found = resumeFileRepository.findByUserId(user.getId()).orElseThrow();
 
-        assertThat(found.getContent()).isEqualTo(content);
+        assertThat(found.getObjectKey()).isEqualTo(objectKey);
+        assertThat(found.getContentType()).isEqualTo("application/pdf");
         assertThat(found.getFileName()).isEqualTo("이력서.pdf");
         assertThat(found.getUpdatedAt()).isNotNull();
     }
@@ -57,7 +62,7 @@ class ResumeFileRepositoryTest {
     void 요약_조회는_파일명_크기_수정시각을_반환한다() {
         User user = saveUser();
         byte[] content = "%PDF-1.7 body".getBytes(StandardCharsets.US_ASCII);
-        resumeFileRepository.save(ResumeFile.upload(user, "이력서.pdf", content));
+        resumeFileRepository.save(ResumeFile.upload(user, "이력서.pdf", content, storage));
         flushAndClear();
 
         ResumeSummary summary = resumeFileRepository.findSummaryByUserId(user.getId()).orElseThrow();
@@ -79,7 +84,7 @@ class ResumeFileRepositoryTest {
     void 이력서를_삭제한다() {
         User user = saveUser();
         ResumeFile saved = resumeFileRepository.save(ResumeFile.upload(user, "a.pdf",
-                "%PDF-1.7".getBytes(StandardCharsets.US_ASCII)));
+                "%PDF-1.7".getBytes(StandardCharsets.US_ASCII), storage));
         flushAndClear();
 
         resumeFileRepository.delete(resumeFileRepository.findByUserId(user.getId()).orElseThrow());

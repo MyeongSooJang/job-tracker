@@ -20,6 +20,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMultipartHttpServletRequestBuilder;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.time.LocalDateTime;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -29,8 +30,6 @@ import static org.mockito.BDDMockito.willThrow;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -99,16 +98,17 @@ class ResumeControllerTest {
     }
 
     @Test
-    void GET_me_resume_PDF를_다운로드한다() throws Exception {
-        byte[] body = "%PDF-1.7 body".getBytes(StandardCharsets.US_ASCII);
-        given(resumeService.download(1L)).willReturn(new ResumeDownload("이력서.pdf", body));
+    void GET_me_resume_내려받기_주소를_JSON으로_반환한다() throws Exception {
+        given(resumeService.download(1L)).willReturn(new ResumeDownload(
+                "https://test-bucket.s3.amazonaws.com/resumes/1/a.pdf?X-Amz-Signature=x",
+                "이력서.pdf",
+                Instant.parse("2026-11-05T01:05:00Z")));
 
         mockMvc.perform(get("/api/me/resume").header("Authorization", BEARER))
                 .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_PDF))
-                .andExpect(header().string("Content-Disposition",
-                        org.hamcrest.Matchers.containsString("attachment")))
-                .andExpect(content().bytes(body));
+                .andExpect(jsonPath("$.url").value("https://test-bucket.s3.amazonaws.com/resumes/1/a.pdf?X-Amz-Signature=x"))
+                .andExpect(jsonPath("$.fileName").value("이력서.pdf"))
+                .andExpect(jsonPath("$.expiresAt").value("2026-11-05T01:05:00Z"));
     }
 
     @Test

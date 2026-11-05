@@ -23,6 +23,12 @@ spring:
       max-file-size: 5MB
       max-request-size: 6MB
 
+app:
+  storage:
+    bucket: ${S3_BUCKET}
+    region: ${AWS_REGION:ap-northeast-2}
+    presign-ttl: ${S3_PRESIGN_TTL:5m}
+
 jwt:
   secret: ${JWT_SECRET}
   expiration-minutes: ${JWT_EXPIRATION_MINUTES:1440}

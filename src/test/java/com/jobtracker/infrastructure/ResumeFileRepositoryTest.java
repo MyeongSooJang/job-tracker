@@ -16,9 +16,11 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -34,7 +36,11 @@ class ResumeFileRepositoryTest {
     private final FakeFileStorage storage = new FakeFileStorage();
 
     private User saveUser() {
-        return userRepository.save(User.register("hong@example.com", "홍길동", "password1", new FakePasswordHasher()));
+        return saveUser("hong@example.com");
+    }
+
+    private User saveUser(String email) {
+        return userRepository.save(User.register(email, "홍길동", "password1", new FakePasswordHasher()));
     }
 
     private void flushAndClear() {
@@ -91,6 +97,22 @@ class ResumeFileRepositoryTest {
         flushAndClear();
 
         assertThat(em.find(ResumeFile.class, saved.getId())).isNull();
+    }
+
+    @Test
+    void 아직_S3로_옮기지_않은_이력서의_id만_조회한다() {
+        byte[] pdf = "%PDF-1.7".getBytes(StandardCharsets.US_ASCII);
+        ResumeFile migrated = resumeFileRepository.save(
+                ResumeFile.upload(saveUser("a@example.com"), "a.pdf", pdf, storage));
+        ResumeFile legacy = resumeFileRepository.save(
+                ResumeFile.upload(saveUser("b@example.com"), "b.pdf", pdf, storage));
+        ReflectionTestUtils.setField(legacy, "objectKey", null);
+        ReflectionTestUtils.setField(legacy, "legacyContent", pdf);
+        flushAndClear();
+
+        List<Long> ids = resumeFileRepository.findIdsNotMigrated();
+
+        assertThat(ids).containsExactly(legacy.getId()).doesNotContain(migrated.getId());
     }
 
     @Test

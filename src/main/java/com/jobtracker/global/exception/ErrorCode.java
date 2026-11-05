@@ -30,7 +30,9 @@ public enum ErrorCode {
     STUDY_LOG_NOT_FOUND(HttpStatus.NOT_FOUND, "학습 기록을 찾을 수 없습니다."),
     STUDY_CONTENT_REQUIRED(HttpStatus.BAD_REQUEST, "공부한 내용을 입력해주세요."),
     INVALID_STUDY_MINUTES(HttpStatus.BAD_REQUEST, "공부 시간은 0~1440분 사이여야 합니다."),
-    FUTURE_STUDY_DATE(HttpStatus.BAD_REQUEST, "미래 날짜에는 기록할 수 없습니다.");
+    FUTURE_STUDY_DATE(HttpStatus.BAD_REQUEST, "미래 날짜에는 기록할 수 없습니다."),
+    STUDY_TITLE_REQUIRED(HttpStatus.BAD_REQUEST, "제목을 1~100자로 입력해주세요."),
+    INVALID_STUDY_RANGE(HttpStatus.BAD_REQUEST, "조회 기간이 올바르지 않습니다.");
 
     private final HttpStatus httpStatus;
     private final String message;

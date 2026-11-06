@@ -24,7 +24,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - Swagger UI: `/swagger-ui.html`
 - DB 설정은 `application.yml`의 환경변수 사용: `PGHOST`, `PGPORT`, `PGDATABASE`, `PGUSER`/`DB_USERNAME`, `PGPASSWORD`/`DB_PASSWORD`, `PORT` (Railway/Render 배포 기준). `ddl-auto: update`이며 마이그레이션 도구는 없다.
-- 이메일 인증은 Redis와 SMTP를 쓴다: `REDIS_URL`(기본 `redis://localhost:6379`), `MAIL_HOST`/`MAIL_PORT`(기본 `smtp.gmail.com`/`587`), `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_FROM`(기본 `MAIL_USERNAME`). 로컬 Redis는 `docker run -d -p 6379:6379 redis:7`.
+- 이메일 인증은 Redis와 Gmail API(HTTPS)를 쓴다. Render 무료 플랜이 SMTP 포트(25/465/587)를 막아서 SMTP는 쓰지 않는다: `REDIS_URL`(기본 `redis://localhost:6379`), `GMAIL_CLIENT_ID`, `GMAIL_CLIENT_SECRET`, `GMAIL_REFRESH_TOKEN`(`gmail.send` 범위, 동의 화면은 프로덕션 게시 상태여야 토큰이 만료되지 않는다), `MAIL_FROM`(토큰을 발급한 Gmail 주소). 모두 기본값이 없어 미설정 시 기동에 실패한다. 로컬 Redis는 `docker run -d -p 6379:6379 redis:7`.
 - 테스트 메서드명은 한글(`POST_applications_지원_건을_등록한다`) 스타일을 따른다.
 
 ## 아키텍처

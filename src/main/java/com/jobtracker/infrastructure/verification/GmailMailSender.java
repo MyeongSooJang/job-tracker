@@ -57,13 +57,15 @@ public class GmailMailSender implements MailSender {
     public void sendVerificationCode(String email, VerificationCode code) {
         try {
             String raw = encode(verificationMessage(email, code));
-            restClient.post()
+            SendResponse response = restClient.post()
                     .uri(SEND_URL)
                     .header("Authorization", "Bearer " + fetchAccessToken())
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(Map.of("raw", raw))
                     .retrieve()
-                    .toBodilessEntity();
+                    .body(SendResponse.class);
+            // 이메일 주소와 인증 코드는 남기지 않는다. Gmail 발송 내역과 대조할 메시지 ID만 남긴다.
+            log.info("인증 메일 발송 완료 messageId={}", response == null ? null : response.id());
         } catch (RestClientException | MessagingException | IOException e) {
             log.warn("인증 메일 발송 실패", e);
             throw new BusinessException(ErrorCode.MAIL_SEND_FAILED);
@@ -101,6 +103,9 @@ public class GmailMailSender implements MailSender {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         message.writeTo(out);
         return Base64.getUrlEncoder().encodeToString(out.toByteArray());
+    }
+
+    private record SendResponse(String id) {
     }
 
     private record TokenResponse(@JsonProperty("access_token") String accessToken) {

@@ -8,6 +8,8 @@ spring:
     password: ${PGPASSWORD:${DB_PASSWORD:postgres}}
     driver-class-name: org.postgresql.Driver
   jpa:
+    # 기본값(true)을 그대로 명시한다. false로 바꾸면 컨트롤러·DTO 변환 단계의 지연 로딩이 LazyInitializationException이 된다.
+    open-in-view: true
     hibernate:
       ddl-auto: update
     show-sql: false

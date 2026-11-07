@@ -95,3 +95,4 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - 브랜치·커밋·PR·머지 방식과 형식은 전역 `commit-and-pr-format` 스킬을 따른다. 커밋·PR 작업 전에 스킬을 호출한다.
 - 기능 하나가 끝나고 `./gradlew test`가 통과하면 별도 확인 없이 커밋·push·PR 생성까지 하고, 머지는 사용자가 지시하거나 확인한 뒤에 한다. 테스트가 실패하면 커밋/push하지 않는다.
 - 커밋 메시지에 `Co-Authored-By` 등 Claude 관련 attribution 줄을 넣지 않는다.
+- 작업 중 내용이 바뀔 때마다 그 자리에서 커밋한다. 특히 스킬을 만들거나 고칠 때는 초안, 테스트 후 수정 1회마다 각각 커밋하고, 본문에 "무엇이 잘못 나왔고 왜 바꿨는지"를 적는다. 끝난 뒤 한 번에 커밋하지 않는다. 문제가 자주 생기는 지점을 커밋 이력에서 찾아 개선하기 위해서다.

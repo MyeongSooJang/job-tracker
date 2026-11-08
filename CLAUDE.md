@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 프로젝트 개요
 
-취업 활동(서류 제출 ~ 면접) 기록 관리용 Spring Boot 3.3 / Java 21 백엔드 (Gradle, JPA, PostgreSQL). 프론트엔드는 별도 저장소(Vercel 배포)이며, 설계 문서는 `docs/superpowers/specs/`, 구현 계획은 `docs/superpowers/plans/`에 있다.
+취업 활동(서류 제출 ~ 면접) 기록 관리용 Spring Boot 3.3 / Java 21 백엔드 (Gradle, JPA, PostgreSQL). 프론트엔드는 별도 저장소(Vercel 배포)이며, 설계 문서는 `docs/superpowers/specs/`, 구현 계획은 `docs/superpowers/plans/`에 두지만 git에서 추적하지 않는다(로컬 전용).
 
 ## 명령어
 
@@ -50,6 +50,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - 서비스는 로직을 호출하는 layer 이다.
 - 로직을 수행하는 것은 도메인 layer에서 수행되며, domain 값을 꺼내서 service에서 처리하지 않는다.
+
+## 동시성: 확인한 뒤 처리하지 않는다
+
+- 시도 횟수·쿨다운·중복 방지·일회성처럼 한도를 지키는 로직은 "읽고 판단한 뒤 갱신"으로 쓰지 않는다. 원자 연산(Redis `INCR`/`setIfAbsent`, DB 유니크 제약)을 **먼저** 실행하고 그 결과로 판단한다. 읽는 시점에는 동시 요청이 모두 같은 상태를 보기 때문이다.
+- 이런 로직의 테스트는 순차 호출로 끝내지 않는다. "다른 요청이 이미 한도를 소진한 상태"를 Fake에 미리 만들고, 맞는 입력이 와도 거절되는지 확인한다.
+- 인증·한도·중복 방지 코드를 새로 쓰거나 바꾼 PR은 만들기 전에 `/code-review`(인증이면 `/security-review`도)를 실행한다. 쓴 사람의 가정과 분리된 눈으로 한 번 더 읽는다.
 
 ## OOP 원칙 (코드 작성·수정 시 필수)
 

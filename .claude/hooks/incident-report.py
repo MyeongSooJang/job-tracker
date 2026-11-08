@@ -196,11 +196,11 @@ h3 small{display:block;font-weight:400;color:var(--muted);font-size:12px;font-fa
 .card h2{font-size:14px;margin:0 0 6px;color:var(--accent)}.card p{margin:0}
 .file{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:16px;margin-bottom:16px;min-width:0}
 .hunk{margin-top:12px}.hunk-head{font-size:12px;color:var(--muted);font-family:ui-monospace,Consolas,monospace;margin-bottom:4px}
-.cols{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.cols>div{min-width:0}
+.cols{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}.cols>div{min-width:0}
 .col-title{font-size:12px;font-weight:700;color:var(--muted);margin-bottom:2px}
-pre{margin:0;overflow-x:auto;border:1px solid var(--line);border-radius:6px;background:var(--ctx);
-font:13px/1.5 ui-monospace,Consolas,monospace}code{display:block;min-width:max-content}
-.l{display:block;padding:0 10px;white-space:pre}.l.del{background:var(--del);color:var(--del-ink)}
+pre{margin:0;border:1px solid var(--line);border-radius:6px;background:var(--ctx);
+font:13px/1.5 ui-monospace,Consolas,monospace}code{display:block}
+.l{display:block;padding:0 10px;white-space:pre-wrap;overflow-wrap:anywhere}.l.del{background:var(--del);color:var(--del-ink)}
 .l.add{background:var(--add);color:var(--add-ink)}details{margin-top:8px}summary{cursor:pointer;color:var(--muted)}
 ul{padding-left:20px}.empty{color:var(--muted)}
 @media (max-width:760px){.cards,.cols{grid-template-columns:minmax(0,1fr)}h1{font-size:23px}}

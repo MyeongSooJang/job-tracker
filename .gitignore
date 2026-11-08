@@ -6,3 +6,4 @@ build/
 *.iml
 out/
 .env
+docs/superpowers/

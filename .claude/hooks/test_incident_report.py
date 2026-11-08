@@ -74,6 +74,29 @@ class ParseDiffTest(unittest.TestCase):
         self.assertEqual(report.parse_diff(diff), [])
 
 
+def code_file(path, changed):
+    return report.FileDiff(path, [("@@", [("+", "x")] * changed)])
+
+
+class SplitCoreTest(unittest.TestCase):
+    def test_지정이_없으면_가장_많이_바뀐_파일_하나만_핵심이다(self):
+        small, big = code_file("a/Small.java", 1), code_file("a/Big.java", 5)
+
+        core, rest = report.split_core([small, big], {})
+
+        self.assertEqual((core, rest), ([big], [small]))
+
+    def test_핵심_파일을_이름으로_지정하면_그_파일이_핵심이다(self):
+        small, big = code_file("a/Small.java", 1), code_file("a/Big.java", 5)
+
+        core, rest = report.split_core([small, big], {"핵심 파일": "Small.java"})
+
+        self.assertEqual((core, rest), ([small], [big]))
+
+    def test_코드가_없으면_핵심도_없다(self):
+        self.assertEqual(report.split_core([], {}), ([], []))
+
+
 class HookRunTest(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
@@ -107,6 +130,14 @@ class HookRunTest(unittest.TestCase):
 
         self.assertEqual(result.returncode, 2)
         self.assertIn("원인", result.stderr)
+
+    def test_항목이_150자를_넘으면_차단한다(self):
+        long_message = FIX_MESSAGE.replace("원인: 읽고 비교한 뒤에 횟수를 셌다", "원인: " + "가" * 151)
+
+        result = self.run_hook(f"git commit -q -F - <<'EOF'\n{long_message}\nEOF")
+
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("150자", result.stderr)
 
     def test_add와_커밋을_한_명령으로_실행해도_변경_전후를_담은_보고서를_스테이징한다(self):
         command = f"git add -A && git commit -q -F - <<'EOF'\n{FIX_MESSAGE}\nEOF"

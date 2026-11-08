@@ -30,6 +30,14 @@ class VerificationCodeTest {
     }
 
     @Test
+    void 시도가_5번째까지는_허용되고_6번째부터는_거절된다() {
+        VerificationCode code = VerificationCode.of("123456");
+
+        assertThat(code.hasAttemptLeft(5)).isTrue();
+        assertThat(code.hasAttemptLeft(6)).isFalse();
+    }
+
+    @Test
     void 틀린_횟수가_4회까지는_소진되지_않는다() {
         assertThat(VerificationCode.of("123456").isExhausted(4)).isFalse();
     }

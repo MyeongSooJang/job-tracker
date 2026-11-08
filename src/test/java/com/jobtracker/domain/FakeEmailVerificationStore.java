@@ -13,7 +13,7 @@ public class FakeEmailVerificationStore implements EmailVerificationStore {
 
     private final Set<String> cooldowns = new HashSet<>();
     private final Map<String, VerificationCode> codes = new HashMap<>();
-    private final Map<String, Long> failures = new HashMap<>();
+    private final Map<String, Long> attempts = new HashMap<>();
     private final Set<String> verified = new HashSet<>();
 
     @Override
@@ -29,7 +29,7 @@ public class FakeEmailVerificationStore implements EmailVerificationStore {
     @Override
     public void saveCode(String email, VerificationCode code) {
         codes.put(email, code);
-        failures.remove(email);
+        attempts.remove(email);
     }
 
     @Override
@@ -38,14 +38,14 @@ public class FakeEmailVerificationStore implements EmailVerificationStore {
     }
 
     @Override
-    public long recordFailure(String email) {
-        return failures.merge(email, 1L, Long::sum);
+    public long recordAttempt(String email) {
+        return attempts.merge(email, 1L, Long::sum);
     }
 
     @Override
     public void deleteCode(String email) {
         codes.remove(email);
-        failures.remove(email);
+        attempts.remove(email);
     }
 
     @Override

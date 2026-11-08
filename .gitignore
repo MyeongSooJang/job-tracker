@@ -6,4 +6,5 @@ build/
 *.iml
 out/
 .env
+__pycache__/
 docs/superpowers/

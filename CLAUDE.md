@@ -110,3 +110,4 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - 커밋 메시지에 `Co-Authored-By` 등 Claude 관련 attribution 줄을 넣지 않는다.
 - 작업 중 내용이 바뀔 때마다 그 자리에서 커밋한다. 특히 스킬을 만들거나 고칠 때는 초안, 테스트 후 수정 1회마다 각각 커밋하고, 본문에 "무엇이 잘못 나왔고 왜 바꿨는지"를 적는다. 끝난 뒤 한 번에 커밋하지 않는다. 문제가 자주 생기는 지점을 커밋 이력에서 찾아 개선하기 위해서다.
 - 엔티티(`@Entity`/`@Embeddable`)의 테이블·컬럼·관계를 바꾸면 같은 커밋에서 `docs/ERD.md`도 고친다. `.claude/hooks/erd-guard.py`가 엔티티 수정 시 알려주고, ERD 없이 엔티티만 커밋하려 하면 차단한다. `ddl-auto: update`는 컬럼 추가만 하므로 운영 DB에 직접 DDL이 필요한지도 함께 확인한다.
+- `fix` 커밋 본문에는 `원인:`, `영향:`, `놓친 이유:`, `재발 방지:`를 항목당 150자 이내로, 신입이 읽어도 이해되게 전문용어를 풀어 적는다(선택: `핵심 파일:`로 변경 전/후를 보여 줄 파일 지정). `.claude/hooks/incident-report.py`가 항목이 없으면 커밋을 차단하고, 있으면 핵심 코드의 변경 전/후가 담긴 `docs/incidents/*.html`을 만들어 같은 커밋에 넣는다. 이미 만든 커밋은 `python .claude/hooks/incident-report.py --from-commit <sha> --set "원인=..."`으로 만든다. 훅 테스트는 `python -m unittest discover -s .claude/hooks -p "test_*.py"`.

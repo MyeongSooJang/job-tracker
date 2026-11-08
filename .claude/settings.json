@@ -25,6 +25,11 @@
             "type": "command",
             "command": "python .claude/hooks/erd-guard.py",
             "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "python .claude/hooks/incident-report.py",
+            "timeout": 20
           }
         ]
       }

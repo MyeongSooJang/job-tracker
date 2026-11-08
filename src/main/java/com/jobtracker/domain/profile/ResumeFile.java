@@ -42,16 +42,11 @@ public class ResumeFile {
     @Column(nullable = false)
     private long sizeBytes;
 
-    // S3 이전이 끝나기 전까지 null일 수 있다. 이전이 끝나면(PR 2) NOT NULL로 바꾼다.
-    @Column(name = "object_key")
+    @Column(name = "object_key", nullable = false)
     private String objectKey;
 
     @Column(name = "content_type")
     private String contentType;
-
-    // S3 이전 전의 기존 데이터. 이전이 끝나면(PR 2) 컬럼과 함께 제거한다.
-    @Column(name = "content", length = MAX_SIZE_BYTES)
-    private byte[] legacyContent;
 
     @LastModifiedDate
     private LocalDateTime updatedAt;
@@ -75,32 +70,15 @@ public class ResumeFile {
         this.sizeBytes = content.length;
         this.objectKey = newKey;
         this.contentType = CONTENT_TYPE;
-        this.legacyContent = null;
         return previousKey;
     }
 
     public PresignedUrl downloadUrl(FileStorage storage) {
-        if (objectKey == null) {
-            throw new BusinessException(ErrorCode.RESUME_NOT_FOUND);
-        }
         return storage.presignedDownloadUrl(objectKey, fileName);
     }
 
     public void deleteFrom(FileStorage storage) {
-        if (objectKey != null) {
-            storage.delete(objectKey);
-        }
-    }
-
-    // DB에 저장돼 있던 기존 내용을 S3로 옮긴다. 이미 옮겼거나 옮길 내용이 없으면 아무것도 하지 않는다.
-    public void migrateTo(FileStorage storage) {
-        if (objectKey != null || legacyContent == null) {
-            return;
-        }
-        String key = newObjectKey();
-        storage.put(key, legacyContent, CONTENT_TYPE);
-        this.objectKey = key;
-        this.contentType = CONTENT_TYPE;
+        storage.delete(objectKey);
     }
 
     private String newObjectKey() {

@@ -47,7 +47,6 @@ erDiagram
         bigint size_bytes
         varchar object_key "S3 키"
         varchar content_type
-        bytea content "레거시, PR 2에서 정리 예정"
         timestamp updated_at
     }
     companies {

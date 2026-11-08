@@ -11,6 +11,11 @@ import java.util.List;
 
 public interface StudyLogJpaRepository extends JpaRepository<StudyLog, Long>, StudyLogRepository {
 
+    @Override
+    @Query("select s from StudyLog s where s.userId = :userId and s.studyDate between :from and :to "
+            + "order by s.studyDate desc, s.id desc")
+    List<StudyLog> findInPeriod(@Param("userId") Long userId, @Param("from") LocalDate from, @Param("to") LocalDate to);
+
     @Query("select distinct s.studyDate from StudyLog s where s.userId = :userId order by s.studyDate desc")
     List<LocalDate> findStudyDatesByUserId(@Param("userId") Long userId);
 

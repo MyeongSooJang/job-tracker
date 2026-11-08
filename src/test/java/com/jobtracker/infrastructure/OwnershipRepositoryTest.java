@@ -66,9 +66,9 @@ class OwnershipRepositoryTest {
     @Test
     void 일정은_소유한_지원_건의_것만_조회한다() {
         assertThat(scheduleRepository.findByApplicationUserId(OWNER)).hasSize(1);
-        assertThat(scheduleRepository.findByApplicationUserIdAndScheduledAtBetween(
+        assertThat(scheduleRepository.findInPeriod(
                 OWNER, scheduledAt.minusDays(1), scheduledAt.plusDays(1))).hasSize(1);
-        assertThat(scheduleRepository.findByApplicationUserIdAndScheduledAtBetween(
+        assertThat(scheduleRepository.findInPeriod(
                 OWNER, scheduledAt.plusDays(1), scheduledAt.plusDays(2))).isEmpty();
     }
 

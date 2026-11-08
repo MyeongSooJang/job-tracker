@@ -12,7 +12,7 @@ public interface StudyLogRepository {
     Optional<StudyLog> findByIdAndUserId(Long id, Long userId);
 
     // 최신 날짜부터, 같은 날은 나중에 쓴 글이 먼저
-    List<StudyLog> findByUserIdAndStudyDateBetweenOrderByStudyDateDescIdDesc(Long userId, LocalDate from, LocalDate to);
+    List<StudyLog> findInPeriod(Long userId, LocalDate from, LocalDate to);
 
     // 글이 있는 날짜 수 (같은 날 여러 글은 하루로 센다)
     long countStudyDatesBetween(Long userId, LocalDate from, LocalDate to);

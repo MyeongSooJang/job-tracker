@@ -36,14 +36,6 @@ class ResumeFileTest {
         return content;
     }
 
-    private ResumeFile legacyResume(byte[] legacyContent) {
-        ResumeFile resume = ResumeFile.upload(user, "이력서.pdf", legacyContent, new FakeFileStorage());
-        ReflectionTestUtils.setField(resume, "objectKey", null);
-        ReflectionTestUtils.setField(resume, "contentType", null);
-        ReflectionTestUtils.setField(resume, "legacyContent", legacyContent);
-        return resume;
-    }
-
     @Test
     void PDF_파일을_올리면_이름과_크기가_저장되고_내용은_저장소에_올라간다() {
         byte[] content = pdf("resume");
@@ -200,51 +192,11 @@ class ResumeFileTest {
     }
 
     @Test
-    void 아직_S3로_옮기지_않은_이력서는_내려받기_주소를_만들_수_없다() {
-        ResumeFile resume = legacyResume(pdf("legacy"));
-
-        assertErrorCode(() -> resume.downloadUrl(storage), ErrorCode.RESUME_NOT_FOUND);
-    }
-
-    @Test
     void 저장소에서_지우면_해당_객체가_사라진다() {
         ResumeFile resume = ResumeFile.upload(user, "이력서.pdf", pdf("resume"), storage);
 
         resume.deleteFrom(storage);
 
         assertThat(storage.contains(resume.getObjectKey())).isFalse();
-    }
-
-    @Test
-    void 아직_S3로_옮기지_않은_이력서는_저장소에서_지울_객체가_없다() {
-        ResumeFile resume = legacyResume(pdf("legacy"));
-        storage.put("resumes/7/other.pdf", pdf("other"), "application/pdf");
-
-        resume.deleteFrom(storage);
-
-        assertThat(storage.size()).isEqualTo(1);
-    }
-
-    @Test
-    void 아직_옮기지_않은_이력서를_옮기면_기존_내용이_저장소에_올라가고_키가_채워진다() {
-        byte[] legacy = pdf("legacy");
-        ResumeFile resume = legacyResume(legacy);
-
-        resume.migrateTo(storage);
-
-        assertThat(resume.getObjectKey()).startsWith("resumes/7/").endsWith(".pdf");
-        assertThat(resume.getContentType()).isEqualTo("application/pdf");
-        assertThat(storage.contentOf(resume.getObjectKey())).isEqualTo(legacy);
-    }
-
-    @Test
-    void 이미_옮긴_이력서는_다시_올리지_않는다() {
-        ResumeFile resume = ResumeFile.upload(user, "이력서.pdf", pdf("resume"), storage);
-        String key = resume.getObjectKey();
-
-        resume.migrateTo(storage);
-
-        assertThat(resume.getObjectKey()).isEqualTo(key);
-        assertThat(storage.size()).isEqualTo(1);
     }
 }

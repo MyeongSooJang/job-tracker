@@ -44,12 +44,19 @@ public class EmailVerificationService {
         String email = User.normalizeEmail(rawEmail);
         VerificationCode code = store.findCode(email)
                 .orElseThrow(() -> new BusinessException(ErrorCode.VERIFICATION_EXPIRED));
+        // 비교보다 먼저 시도 횟수를 원자적으로 올린다. 읽고 비교한 뒤에 세면 동시 요청이 모두
+        // 비교를 통과해서 한도를 넘겨 코드를 추측할 수 있다.
+        long attempt = store.recordAttempt(email);
+        if (!code.hasAttemptLeft(attempt)) {
+            store.deleteCode(email);
+            throw new BusinessException(ErrorCode.VERIFICATION_ATTEMPTS_EXCEEDED);
+        }
         if (code.matches(input)) {
             store.deleteCode(email);
             store.markVerified(email);
             return;
         }
-        if (code.isExhausted(store.recordFailure(email))) {
+        if (code.isExhausted(attempt)) {
             store.deleteCode(email);
             throw new BusinessException(ErrorCode.VERIFICATION_ATTEMPTS_EXCEEDED);
         }

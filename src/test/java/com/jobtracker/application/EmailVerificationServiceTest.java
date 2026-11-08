@@ -151,4 +151,19 @@ class EmailVerificationServiceTest {
         assertErrorCode(() -> service.confirm(EMAIL, CODE), ErrorCode.VERIFICATION_EXPIRED);
         assertThat(store.isVerified(EMAIL)).isFalse();
     }
+
+    // 동시 요청은 코드를 읽은 시점에는 모두 코드가 살아 있다. 다른 요청들이 시도 횟수를 이미 소진했다면
+    // 뒤늦게 도착한 요청은 맞는 코드여도 통과하면 안 된다.
+    @Test
+    void 다른_요청이_시도_횟수를_이미_소진했다면_맞는_코드도_거절한다() {
+        service.send(EMAIL);
+        for (int i = 0; i < 5; i++) {
+            store.recordAttempt(EMAIL);
+        }
+
+        assertErrorCode(() -> service.confirm(EMAIL, CODE), ErrorCode.VERIFICATION_ATTEMPTS_EXCEEDED);
+
+        assertThat(store.isVerified(EMAIL)).isFalse();
+        assertThat(store.findCode(EMAIL)).isEmpty();
+    }
 }

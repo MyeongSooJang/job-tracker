@@ -43,13 +43,13 @@ public class RedisEmailVerificationStore implements EmailVerificationStore {
     }
 
     @Override
-    public long recordFailure(String email) {
+    public long recordAttempt(String email) {
         String attemptsKey = key("attempts", email);
-        long failures = Objects.requireNonNull(redis.opsForValue().increment(attemptsKey));
-        if (failures == 1) {
+        long attempts = Objects.requireNonNull(redis.opsForValue().increment(attemptsKey));
+        if (attempts == 1) {
             redis.expire(attemptsKey, CODE_TTL);
         }
-        return failures;
+        return attempts;
     }
 
     @Override

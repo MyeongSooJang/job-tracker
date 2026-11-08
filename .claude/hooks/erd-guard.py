@@ -2,7 +2,7 @@
 """엔티티가 바뀌면 docs/ERD.md도 함께 고치도록 강제한다.
 
 1. PostToolUse(Edit|Write): @Entity/@Embeddable 파일을 고치면 ERD 갱신 알림을 Claude에게 준다.
-2. PreToolUse(Bash): 커밋 시 스테이징에 엔티티 변경이 있는데 docs/ERD.md가 없으면 차단한다.
+2. PreToolUse(Bash): 커밋(머지 커밋 제외) 시 스테이징에 엔티티 변경이 있는데 docs/ERD.md가 없으면 차단한다.
 """
 import json
 import re
@@ -31,7 +31,16 @@ def remind(file_path: str) -> None:
     print(json.dumps({"hookSpecificOutput": {"hookEventName": "PostToolUse", "additionalContext": message}}))
 
 
+def is_merging() -> bool:
+    return subprocess.run(
+        ["git", "rev-parse", "-q", "--verify", "MERGE_HEAD"], capture_output=True
+    ).returncode == 0
+
+
 def guard_commit() -> None:
+    # 머지 커밋에 스테이징된 엔티티는 다른 브랜치에서 온 것이고, ERD는 그쪽에서 이미 관리됐다.
+    if is_merging():
+        return
     staged = subprocess.run(
         ["git", "diff", "--cached", "--name-only"], capture_output=True, text=True, encoding="utf-8"
     ).stdout.split()
@@ -48,6 +57,9 @@ def guard_commit() -> None:
 
 
 def main() -> None:
+    sys.stdin.reconfigure(encoding="utf-8")
+    sys.stdout.reconfigure(encoding="utf-8")
+    sys.stderr.reconfigure(encoding="utf-8")
     event = json.load(sys.stdin)
     tool_input = event.get("tool_input", {})
     if event.get("hook_event_name") == "PostToolUse":

@@ -8,7 +8,9 @@ import com.jobtracker.domain.application.Application;
 import com.jobtracker.domain.application.ApplicationStatus;
 import com.jobtracker.domain.company.Company;
 import com.jobtracker.domain.company.CompanyRepository;
+import com.jobtracker.domain.review.ApplyRoute;
 import com.jobtracker.domain.review.CompanyReviewSummary;
+import com.jobtracker.domain.review.InterviewAtmosphere;
 import com.jobtracker.domain.review.Review;
 import com.jobtracker.domain.review.ReviewRepository;
 import com.jobtracker.global.exception.ErrorCode;
@@ -155,6 +157,25 @@ class CompanyServiceTest {
             assertThat(review.content()).isEqualTo("면접관이 친절했어요");
             assertThat(review.position()).isEqualTo("백엔드 개발자");
             assertThat(review.stage()).isEqualTo(ApplicationStatus.ACCEPTED);
+        });
+    }
+
+    @Test
+    void 회사의_후기에는_면접_상세가_함께_담긴다() {
+        Company company = Company.create("카카오", "IT", "https://kakao.com");
+        Application application = applicationOf(company);
+        Review review = writtenReview(application, "면접관이 친절했어요", 5);
+        review.describeInterview(4, InterviewAtmosphere.TENSE, ApplyRoute.RECRUITER, List.of("자기소개", "프로젝트 경험"));
+        given(companyRepository.findById(1L)).willReturn(Optional.of(company));
+        given(reviewRepository.findWrittenByCompanyId(1L)).willReturn(List.of(review));
+
+        List<CompanyReviewResponse> reviews = companyService.findReviews(1L);
+
+        assertThat(reviews).singleElement().satisfies(response -> {
+            assertThat(response.difficulty()).isEqualTo(4);
+            assertThat(response.atmosphere()).isEqualTo(InterviewAtmosphere.TENSE);
+            assertThat(response.route()).isEqualTo(ApplyRoute.RECRUITER);
+            assertThat(response.questions()).containsExactly("자기소개", "프로젝트 경험");
         });
     }
 

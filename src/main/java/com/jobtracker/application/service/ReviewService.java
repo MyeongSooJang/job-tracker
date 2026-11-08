@@ -28,6 +28,7 @@ public class ReviewService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.REVIEW_NOT_FOUND));
         review.verifyOwner(userId);
         review.write(request.content(), request.rating());
+        review.describeInterview(request.difficulty(), request.atmosphere(), request.route(), request.questions());
         return review;
     }
 }

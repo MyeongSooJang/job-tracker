@@ -6,6 +6,8 @@ import com.jobtracker.application.service.dto.CompanyResponse;
 import com.jobtracker.application.service.dto.CompanyReviewResponse;
 import com.jobtracker.domain.application.ApplicationStatus;
 import com.jobtracker.domain.company.Company;
+import com.jobtracker.domain.review.ApplyRoute;
+import com.jobtracker.domain.review.InterviewAtmosphere;
 import com.jobtracker.global.exception.BusinessException;
 import com.jobtracker.global.exception.ErrorCode;
 import com.jobtracker.presentation.controller.CompanyController;
@@ -103,7 +105,8 @@ class CompanyControllerTest {
     void GET_companies_id_reviews_회사의_후기를_작성자_정보_없이_조회한다() throws Exception {
         given(companyService.findReviews(1L)).willReturn(List.of(
                 new CompanyReviewResponse(10L, 5, "면접관이 친절했어요", "백엔드 개발자",
-                        ApplicationStatus.ACCEPTED, LocalDateTime.of(2026, 10, 20, 9, 0))));
+                        ApplicationStatus.ACCEPTED, 3, InterviewAtmosphere.COMFORTABLE, ApplyRoute.REFERRAL,
+                        List.of("자기소개"), LocalDateTime.of(2026, 10, 20, 9, 0))));
 
         mockMvc.perform(get("/api/companies/1/reviews")
                         .header("Authorization", BEARER))
@@ -112,6 +115,10 @@ class CompanyControllerTest {
                 .andExpect(jsonPath("$[0].content").value("면접관이 친절했어요"))
                 .andExpect(jsonPath("$[0].position").value("백엔드 개발자"))
                 .andExpect(jsonPath("$[0].stage").value("ACCEPTED"))
+                .andExpect(jsonPath("$[0].difficulty").value(3))
+                .andExpect(jsonPath("$[0].atmosphere").value("COMFORTABLE"))
+                .andExpect(jsonPath("$[0].route").value("REFERRAL"))
+                .andExpect(jsonPath("$[0].questions[0]").value("자기소개"))
                 .andExpect(jsonPath("$[0].userId").doesNotExist())
                 .andExpect(jsonPath("$[0].application").doesNotExist());
     }

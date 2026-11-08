@@ -16,6 +16,7 @@ public enum ErrorCode {
     INVALID_STATUS_TRANSITION(HttpStatus.BAD_REQUEST, "유효하지 않은 상태 전이입니다."),
     COMPANY_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 등록된 회사입니다."),
     INVALID_RATING(HttpStatus.BAD_REQUEST, "평점은 1~5 사이여야 합니다."),
+    INVALID_DIFFICULTY(HttpStatus.BAD_REQUEST, "난이도는 1~5 사이여야 합니다."),
     EMAIL_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 가입된 이메일입니다."),
     INVALID_EMAIL(HttpStatus.BAD_REQUEST, "이메일 형식이 올바르지 않습니다."),
     INVALID_PASSWORD(HttpStatus.BAD_REQUEST, "비밀번호는 8자 이상이어야 합니다."),

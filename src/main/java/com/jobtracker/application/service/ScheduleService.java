@@ -59,6 +59,6 @@ public class ScheduleService {
     }
 
     public List<Schedule> findByPeriod(Long userId, LocalDateTime from, LocalDateTime to) {
-        return scheduleRepository.findByApplicationUserIdAndScheduledAtBetween(userId, from, to);
+        return scheduleRepository.findInPeriod(userId, from, to);
     }
 }

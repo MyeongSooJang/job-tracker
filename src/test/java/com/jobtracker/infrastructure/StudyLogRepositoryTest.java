@@ -37,7 +37,7 @@ class StudyLogRepositoryTest {
         save(OWNER, TODAY, "아침");
         save(OWNER, TODAY, "저녁");
 
-        List<StudyLog> logs = studyLogRepository.findByUserIdAndStudyDateBetweenOrderByStudyDateDescIdDesc(
+        List<StudyLog> logs = studyLogRepository.findInPeriod(
                 OWNER, TODAY, TODAY);
 
         assertThat(logs).extracting(StudyLog::getTitle).containsExactly("저녁", "아침");
@@ -56,7 +56,7 @@ class StudyLogRepositoryTest {
 
         assertThat(studyLogRepository.findByIdAndUserId(saved.getId(), OWNER)).isEmpty();
         assertThat(studyLogRepository.findStudyDatesByUserId(OWNER)).isEmpty();
-        assertThat(studyLogRepository.findByUserIdAndStudyDateBetweenOrderByStudyDateDescIdDesc(
+        assertThat(studyLogRepository.findInPeriod(
                 OWNER, TODAY.minusDays(30), TODAY)).isEmpty();
     }
 
@@ -67,7 +67,7 @@ class StudyLogRepositoryTest {
         save(OWNER, LocalDate.of(2026, 11, 1));
         save(OWNER, LocalDate.of(2026, 12, 1));
 
-        List<StudyLog> logs = studyLogRepository.findByUserIdAndStudyDateBetweenOrderByStudyDateDescIdDesc(
+        List<StudyLog> logs = studyLogRepository.findInPeriod(
                 OWNER, LocalDate.of(2026, 11, 1), LocalDate.of(2026, 11, 30));
 
         assertThat(logs).extracting(StudyLog::getStudyDate)

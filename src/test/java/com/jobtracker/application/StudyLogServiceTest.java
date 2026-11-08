@@ -143,7 +143,7 @@ class StudyLogServiceTest {
     @Test
     void 구간_조회는_저장소가_돌려준_순서대로_글을_돌려준다() {
         LocalDate from = TODAY.minusDays(13);
-        given(studyLogRepository.findByUserIdAndStudyDateBetweenOrderByStudyDateDescIdDesc(USER_ID, from, TODAY))
+        given(studyLogRepository.findInPeriod(USER_ID, from, TODAY))
                 .willReturn(List.of(log(TODAY, 60), log(from, 30)));
 
         List<StudyLogResponse> responses = studyLogService.findRange(USER_ID, from, TODAY);
@@ -161,7 +161,7 @@ class StudyLogServiceTest {
     @Test
     void 구간_조회는_62일까지_허용한다() {
         LocalDate from = TODAY.minusDays(61);
-        given(studyLogRepository.findByUserIdAndStudyDateBetweenOrderByStudyDateDescIdDesc(USER_ID, from, TODAY))
+        given(studyLogRepository.findInPeriod(USER_ID, from, TODAY))
                 .willReturn(List.of());
 
         assertThat(studyLogService.findRange(USER_ID, from, TODAY)).isEmpty();
@@ -174,7 +174,7 @@ class StudyLogServiceTest {
         given(studyLogRepository.findStudyDatesByUserId(USER_ID)).willReturn(List.of(
                 TODAY, yesterday,
                 TODAY.minusDays(10), TODAY.minusDays(11), TODAY.minusDays(12), TODAY.minusDays(13)));
-        given(studyLogRepository.findByUserIdAndStudyDateBetweenOrderByStudyDateDescIdDesc(USER_ID, TODAY, TODAY))
+        given(studyLogRepository.findInPeriod(USER_ID, TODAY, TODAY))
                 .willReturn(List.of(log(TODAY, 30), log(TODAY, 60)));
         given(studyLogRepository.countStudyDatesBetween(
                 USER_ID, LocalDate.of(2026, 11, 1), LocalDate.of(2026, 11, 30))).willReturn(2L);
@@ -190,7 +190,7 @@ class StudyLogServiceTest {
     @Test
     void 오늘_쓴_글이_없으면_오늘_공부_시간은_0이다() {
         given(studyLogRepository.findStudyDatesByUserId(USER_ID)).willReturn(List.of());
-        given(studyLogRepository.findByUserIdAndStudyDateBetweenOrderByStudyDateDescIdDesc(USER_ID, TODAY, TODAY))
+        given(studyLogRepository.findInPeriod(USER_ID, TODAY, TODAY))
                 .willReturn(List.of());
         given(studyLogRepository.countStudyDatesBetween(
                 USER_ID, LocalDate.of(2026, 11, 1), LocalDate.of(2026, 11, 30))).willReturn(0L);
@@ -206,7 +206,7 @@ class StudyLogServiceTest {
     void 잔디는_글이_있는_날만_글_수와_공부_시간_합계로_돌려준다() {
         LocalDate from = TODAY.minusDays(30);
         LocalDate twoDaysAgo = TODAY.minusDays(2);
-        given(studyLogRepository.findByUserIdAndStudyDateBetweenOrderByStudyDateDescIdDesc(USER_ID, from, TODAY))
+        given(studyLogRepository.findInPeriod(USER_ID, from, TODAY))
                 .willReturn(List.of(log(TODAY, 60), log(TODAY, 30), log(twoDaysAgo, 20)));
 
         List<HeatmapDayResponse> heatmap = studyLogService.heatmap(USER_ID, from, TODAY);
@@ -226,7 +226,7 @@ class StudyLogServiceTest {
     @Test
     void 잔디_조회는_400일까지_허용한다() {
         LocalDate from = TODAY.minusDays(399);
-        given(studyLogRepository.findByUserIdAndStudyDateBetweenOrderByStudyDateDescIdDesc(USER_ID, from, TODAY))
+        given(studyLogRepository.findInPeriod(USER_ID, from, TODAY))
                 .willReturn(List.of());
 
         assertThat(studyLogService.heatmap(USER_ID, from, TODAY)).isEmpty();

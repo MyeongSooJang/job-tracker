@@ -3,5 +3,31 @@
     "allow": [
       "Bash(./gradlew *)"
     ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python .claude/hooks/erd-guard.py",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python .claude/hooks/erd-guard.py",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
   }
 }

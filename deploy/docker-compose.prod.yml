@@ -1,5 +1,8 @@
 # EC2 한 대에서 앱 + PostgreSQL + Redis + Caddy(HTTPS)를 함께 띄운다.
-# 사용: cd /opt/job-tracker && docker compose -f docker-compose.prod.yml --env-file .env up -d
+# 사용: cd /opt/ssangtteongnip && docker compose -f docker-compose.prod.yml --env-file .env up -d
+# 컨테이너·볼륨·네트워크 이름의 접두사. 지정하지 않으면 폴더 이름을 따라간다.
+name: ssangtteongnip
+
 services:
   app:
     image: ${APP_IMAGE}
@@ -43,7 +46,7 @@ services:
     volumes:
       # 컨테이너를 지워도 데이터가 남도록 호스트(EBS) 경로를 직접 마운트한다.
       # 18부터 이미지의 PGDATA가 /var/lib/postgresql/18/docker 라서 한 단계 위를 마운트한다.
-      - /opt/job-tracker/pgdata:/var/lib/postgresql
+      - /opt/ssangtteongnip/pgdata:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${PGUSER:-ssangtteongnip} -d ${PGDATABASE:-ssangtteongnip}"]
       interval: 10s

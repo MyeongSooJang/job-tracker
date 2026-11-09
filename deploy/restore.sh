@@ -5,7 +5,7 @@ set -euo pipefail
 
 KEY="${1:?사용법: restore.sh <s3 key>}"
 
-cd /opt/job-tracker
+cd /opt/ssangtteongnip
 set -a; source .env; set +a
 
 aws s3 cp "s3://${S3_BUCKET}/${KEY}" - --region "${AWS_REGION:-ap-northeast-2}" \

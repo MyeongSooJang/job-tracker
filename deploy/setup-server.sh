@@ -9,7 +9,7 @@ if [[ $EUID -ne 0 ]]; then
   exit 1
 fi
 
-APP_DIR=/opt/job-tracker
+APP_DIR=/opt/ssangtteongnip
 SWAP_SIZE=2G
 export DEBIAN_FRONTEND=noninteractive
 
@@ -96,10 +96,10 @@ else
 fi
 
 echo "==> 백업 cron (UTC 14:30 = KST 23:30, 서버를 끄기 직전)"
-cat > /etc/cron.d/job-tracker-backup <<'CRON'
-30 14 * * * root /opt/job-tracker/backup.sh >> /var/log/job-tracker-backup.log 2>&1
+cat > /etc/cron.d/ssangtteongnip-backup <<'CRON'
+30 14 * * * root /opt/ssangtteongnip/backup.sh >> /var/log/ssangtteongnip-backup.log 2>&1
 CRON
-chmod 644 /etc/cron.d/job-tracker-backup
+chmod 644 /etc/cron.d/ssangtteongnip-backup
 systemctl enable --now cron
 
 echo

@@ -13,7 +13,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class JwtTokenProviderTest {
 
-    private static final String SECRET = "test-secret-key-for-job-tracker-0123456789-abcdef";
+    private static final String SECRET = "test-secret-key-for-ssangtteongnip-0123456789-abcdef";
 
     private final JwtTokenProvider provider = new JwtTokenProvider(SECRET, 60);
 
@@ -35,7 +35,7 @@ class JwtTokenProviderTest {
 
     @Test
     void parseUserId_다른_키로_서명된_토큰이면_예외가_발생한다() {
-        JwtTokenProvider other = new JwtTokenProvider("another-secret-key-for-job-tracker-9876543210-zyx", 60);
+        JwtTokenProvider other = new JwtTokenProvider("another-secret-key-for-ssangtteongnip-9876543210-zyx", 60);
 
         assertThatThrownBy(() -> provider.parseUserId(other.issue(42L)))
                 .isInstanceOfSatisfying(BusinessException.class,

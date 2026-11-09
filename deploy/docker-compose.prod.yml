@@ -12,8 +12,8 @@ services:
     environment:
       PGHOST: postgres
       PGPORT: "5432"
-      PGDATABASE: ${PGDATABASE:-jobtracker}
-      PGUSER: ${PGUSER:-jobtracker}
+      PGDATABASE: ${PGDATABASE:-ssangtteongnip}
+      PGUSER: ${PGUSER:-ssangtteongnip}
       PGPASSWORD: ${PGPASSWORD}
       REDIS_URL: redis://redis:6379
       JWT_SECRET: ${JWT_SECRET}
@@ -36,14 +36,14 @@ services:
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_DB: ${PGDATABASE:-jobtracker}
-      POSTGRES_USER: ${PGUSER:-jobtracker}
+      POSTGRES_DB: ${PGDATABASE:-ssangtteongnip}
+      POSTGRES_USER: ${PGUSER:-ssangtteongnip}
       POSTGRES_PASSWORD: ${PGPASSWORD}
     volumes:
       # 컨테이너를 지워도 데이터가 남도록 호스트(EBS) 경로를 직접 마운트한다.
       - /opt/job-tracker/pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${PGUSER:-jobtracker} -d ${PGDATABASE:-jobtracker}"]
+      test: ["CMD-SHELL", "pg_isready -U ${PGUSER:-ssangtteongnip} -d ${PGDATABASE:-ssangtteongnip}"]
       interval: 10s
       timeout: 3s
       retries: 5

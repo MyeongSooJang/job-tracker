@@ -76,8 +76,8 @@ if [[ ! -f "$APP_DIR/.env" ]]; then
 APP_IMAGE=
 API_DOMAIN=
 
-PGDATABASE=jobtracker
-PGUSER=jobtracker
+PGDATABASE=ssangtteongnip
+PGUSER=ssangtteongnip
 PGPASSWORD=$(openssl rand -hex 24)
 
 JWT_SECRET=$(openssl rand -hex 32)

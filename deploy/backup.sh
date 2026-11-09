@@ -11,7 +11,7 @@ KEY="backups/db-${STAMP}.dump"
 
 # 덤프가 중간에 실패하면 빈 파일이 올라가지 않도록 pipefail 로 전체를 실패 처리한다.
 docker compose -f docker-compose.prod.yml exec -T postgres \
-  pg_dump -U "${PGUSER:-jobtracker}" -d "${PGDATABASE:-jobtracker}" -Fc \
+  pg_dump -U "${PGUSER:-ssangtteongnip}" -d "${PGDATABASE:-ssangtteongnip}" -Fc \
   | aws s3 cp - "s3://${S3_BUCKET}/${KEY}" --region "${AWS_REGION:-ap-northeast-2}"
 
 echo "backup ok: s3://${S3_BUCKET}/${KEY}"

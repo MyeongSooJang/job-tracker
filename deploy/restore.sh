@@ -10,6 +10,6 @@ set -a; source .env; set +a
 
 aws s3 cp "s3://${S3_BUCKET}/${KEY}" - --region "${AWS_REGION:-ap-northeast-2}" \
   | docker compose -f docker-compose.prod.yml exec -T postgres \
-      pg_restore -U "${PGUSER:-jobtracker}" -d "${PGDATABASE:-jobtracker}" --clean --if-exists --no-owner
+      pg_restore -U "${PGUSER:-ssangtteongnip}" -d "${PGDATABASE:-ssangtteongnip}" --clean --if-exists --no-owner
 
 echo "restore ok: ${KEY}"

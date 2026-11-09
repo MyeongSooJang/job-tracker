@@ -1,0 +1,80 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+
+# 같은 서버에 배포가 겹치지 않도록 직렬화한다.
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+permissions:
+  id-token: write   # AWS OIDC
+  contents: read
+
+env:
+  AWS_REGION: ap-northeast-2
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+      - run: chmod +x gradlew
+      - run: ./gradlew test --no-daemon
+
+      # 장기 액세스 키 없이 GitHub OIDC로 임시 자격증명을 받는다.
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # EC2(t4g)가 ARM이라 arm64 이미지로 빌드한다.
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/arm64
+          push: true
+          tags: |
+            ${{ steps.ecr.outputs.registry }}/${{ vars.ECR_REPOSITORY }}:${{ github.sha }}
+            ${{ steps.ecr.outputs.registry }}/${{ vars.ECR_REPOSITORY }}:latest
+
+      # Compose·Caddyfile·스크립트를 S3로 올리면 서버가 내려받아 쓴다. (.env는 서버에만 있다)
+      - name: deploy 파일 업로드
+        run: aws s3 sync deploy/ "s3://${{ vars.DEPLOY_BUCKET }}/deploy/" --delete --exclude ".env"
+
+      - name: 서버에 배포 명령 전송
+        env:
+          IMAGE: ${{ steps.ecr.outputs.registry }}/${{ vars.ECR_REPOSITORY }}:${{ github.sha }}
+          REGISTRY: ${{ steps.ecr.outputs.registry }}
+        run: |
+          CMD_ID=$(aws ssm send-command \
+            --instance-ids "${{ vars.EC2_INSTANCE_ID }}" \
+            --document-name AWS-RunShellScript \
+            --parameters commands="[
+              \"set -e\",
+              \"cd /opt/job-tracker\",
+              \"aws s3 sync s3://${{ vars.DEPLOY_BUCKET }}/deploy/ . --exclude .env\",
+              \"chmod +x backup.sh restore.sh\",
+              \"sed -i '/^APP_IMAGE=/d' .env && echo APP_IMAGE=$IMAGE >> .env\",
+              \"aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $REGISTRY\",
+              \"docker compose -f docker-compose.prod.yml --env-file .env pull app\",
+              \"docker compose -f docker-compose.prod.yml --env-file .env up -d\",
+              \"docker image prune -f\"
+            ]" \
+            --query Command.CommandId --output text)
+
+          aws ssm wait command-executed --command-id "$CMD_ID" --instance-id "${{ vars.EC2_INSTANCE_ID }}"
+          aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id "${{ vars.EC2_INSTANCE_ID }}" \
+            --query '{Status:Status,Output:StandardOutputContent,Error:StandardErrorContent}'

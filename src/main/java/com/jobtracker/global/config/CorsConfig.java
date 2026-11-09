@@ -9,7 +9,12 @@ public class CorsConfig implements WebMvcConfigurer {
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/api/**")
-                .allowedOriginPatterns("http://localhost:5173", "https://*.vercel.app", "https://job-tracker-frontend-beryl-two.vercel.app")
+                .allowedOriginPatterns(
+                        "http://localhost:5173",
+                        "https://*.vercel.app",
+                        "https://job-tracker-frontend-beryl-two.vercel.app",
+                        "https://ssangtteongnip.com",
+                        "https://www.ssangtteongnip.com")
                 .allowedMethods("GET", "POST", "PATCH", "PUT", "DELETE")
                 .allowedHeaders("*")
                 .exposedHeaders("Content-Disposition");

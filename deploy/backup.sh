@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# 매일 DB를 덤프해 S3에 올린다. 서버 cron 으로 실행: 30 14 * * * /opt/job-tracker/backup.sh  (UTC 14:30 = KST 23:30)
+# 매일 DB를 덤프해 S3에 올린다. 서버 cron 으로 실행: 30 14 * * * /opt/ssangtteongnip/backup.sh  (UTC 14:30 = KST 23:30)
 # 서버를 KST 00:00~05:50에 꺼 둘 계획이라, 꺼지기 직전 시각으로 잡는다. 새벽 시간대로 옮기면 백업이 돌지 않는다.
 set -euo pipefail
 
-cd /opt/job-tracker
+cd /opt/ssangtteongnip
 set -a; source .env; set +a
 
 STAMP=$(date -u +%Y%m%dT%H%M%SZ)

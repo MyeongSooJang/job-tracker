@@ -1,0 +1,74 @@
+# EC2 한 대에서 앱 + PostgreSQL + Redis + Caddy(HTTPS)를 함께 띄운다.
+# 사용: cd /opt/job-tracker && docker compose -f docker-compose.prod.yml --env-file .env up -d
+services:
+  app:
+    image: ${APP_IMAGE}
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    environment:
+      PGHOST: postgres
+      PGPORT: "5432"
+      PGDATABASE: ${PGDATABASE:-jobtracker}
+      PGUSER: ${PGUSER:-jobtracker}
+      PGPASSWORD: ${PGPASSWORD}
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: ${JWT_SECRET}
+      MAIL_FROM: ${MAIL_FROM}
+      GMAIL_CLIENT_ID: ${GMAIL_CLIENT_ID}
+      GMAIL_CLIENT_SECRET: ${GMAIL_CLIENT_SECRET}
+      GMAIL_REFRESH_TOKEN: ${GMAIL_REFRESH_TOKEN}
+      S3_BUCKET: ${S3_BUCKET}
+      AWS_REGION: ${AWS_REGION:-ap-northeast-2}
+      # 2GB 인스턴스에서 DB·Redis와 메모리를 나눠 쓰므로 힙을 제한한다.
+      JAVA_TOOL_OPTIONS: -Xmx768m
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 8080"]
+      interval: 15s
+      timeout: 3s
+      retries: 10
+      start_period: 60s
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${PGDATABASE:-jobtracker}
+      POSTGRES_USER: ${PGUSER:-jobtracker}
+      POSTGRES_PASSWORD: ${PGPASSWORD}
+    volumes:
+      # 컨테이너를 지워도 데이터가 남도록 호스트(EBS) 경로를 직접 마운트한다.
+      - /opt/job-tracker/pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PGUSER:-jobtracker} -d ${PGDATABASE:-jobtracker}"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # 인증 코드·시도 횟수처럼 잃어도 되는 값만 담으므로 디스크에 저장하지 않는다.
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--save", "", "--appendonly", "no", "--maxmemory", "64mb", "--maxmemory-policy", "allkeys-lru"]
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      - app
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      API_DOMAIN: ${API_DOMAIN:-:80}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  caddy_data:
+  caddy_config:

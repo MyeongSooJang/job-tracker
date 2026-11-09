@@ -12,7 +12,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ./gradlew bootRun                                   # 로컬 PostgreSQL 필요 (아래 환경변수 참고)
 ./gradlew build -x test                             # 빌드 (Dockerfile과 동일)
 ./gradlew test                                      # 전체 테스트
-./gradlew test --tests com.jobtracker.domain.ApplicationTest
+./gradlew test --tests com.ssangtteongnip.domain.ApplicationTest
 ./gradlew test --tests '*ApplicationControllerTest.POST_applications*'   # 단일 테스트
 ```
 
@@ -29,7 +29,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 아키텍처
 
-패키지는 `com.jobtracker` 아래 계층형 + DDD 풍으로 나뉜다.
+패키지는 `com.ssangtteongnip` 아래 계층형 + DDD 풍으로 나뉜다.
 
 - `presentation/controller` — REST 컨트롤러 (`/api/**`)
 - `application/service` — 트랜잭션 서비스 (클래스 `@Transactional(readOnly = true)`, 쓰기 메서드만 `@Transactional`), 요청 DTO는 `service/dto`

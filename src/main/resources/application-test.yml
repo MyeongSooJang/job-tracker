@@ -8,5 +8,5 @@ spring:
     show-sql: false
 
 jwt:
-  secret: test-secret-key-for-job-tracker-0123456789-abcdef
+  secret: test-secret-key-for-ssangtteongnip-0123456789-abcdef
   expiration-minutes: 60

@@ -3,7 +3,7 @@ server:
 
 spring:
   datasource:
-    url: jdbc:postgresql://${PGHOST:localhost}:${PGPORT:5432}/${PGDATABASE:jobtracker}
+    url: jdbc:postgresql://${PGHOST:localhost}:${PGPORT:5432}/${PGDATABASE:ssangtteongnip}
     username: ${PGUSER:${DB_USERNAME:postgres}}
     password: ${PGPASSWORD:${DB_PASSWORD:postgres}}
     driver-class-name: org.postgresql.Driver

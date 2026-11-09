@@ -6,7 +6,7 @@ plugins {
     id 'info.solidsoft.pitest' version '1.15.0'
 }
 
-group = 'com.jobtracker'
+group = 'com.ssangtteongnip'
 version = '0.0.1-SNAPSHOT'
 
 java {
@@ -63,8 +63,8 @@ jacoco {
 }
 
 def coverageExcludes = [
-        'com/jobtracker/JobTrackerApplication.class',
-        'com/jobtracker/global/config/**',
+        'com/ssangtteongnip/SsangtteongnipApplication.class',
+        'com/ssangtteongnip/global/config/**',
         '**/dto/**'
 ]
 
@@ -98,8 +98,8 @@ tasks.named('jacocoTestCoverageVerification') {
 // 비즈니스 규칙이 있는 도메인 패키지만 뮤테이션 테스트한다. 전체 대상은 Spring 테스트가 느려 비실용적이다.
 pitest {
     junit5PluginVersion = '1.2.1'
-    targetClasses = ['com.jobtracker.domain.*']
-    targetTests = ['com.jobtracker.domain.*']
+    targetClasses = ['com.ssangtteongnip.domain.*']
+    targetTests = ['com.ssangtteongnip.domain.*']
     threads = 4
     outputFormats = ['HTML', 'XML']
     timestampedReports = false

@@ -18,6 +18,8 @@ env:
 
 jobs:
   deploy:
+    # AWS 변수를 등록하기 전에는 실패하지 않고 건너뛴다.
+    if: ${{ vars.AWS_ROLE_ARN != '' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

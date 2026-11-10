@@ -196,6 +196,24 @@ test('머지 대상 PR의 최신 커밋을 확인하지 못하면 통과시키�
   assert.equal(result.status, 2)
 })
 
+test('설정에 저장소 밖 경로나 mock 파일이 아닌 이름이 들어 있어도 지우지 않는다', () => {
+  const victim = path.join(os.tmpdir(), `guard-victim-${process.pid}.txt`)
+  fs.writeFileSync(victim, 'keep')
+  tmp.push(victim)
+  const relative = path.relative(path.join(os.tmpdir(), 'guard-test-x'), victim).replace(/\\/g, '/')
+  const repo = makeRepo({ mockFiles: [`../${path.basename(victim)}`, relative, victim, 'README.md', '.git/config', 'mock-preview.html'], previewPort: null })
+  repo.write('mock-preview.html')
+  const script = path.join(repo.dir, '.claude', 'hooks', 'cleanup-mock.cjs')
+
+  const result = spawnSync(process.execPath, [script], { encoding: 'utf8' })
+
+  assert.equal(fs.existsSync(victim), true, '저장소 밖 파일이 지워졌다')
+  assert.equal(repo.exists('README.md'), true)
+  assert.equal(repo.exists('.git/config'), true)
+  assert.equal(repo.exists('mock-preview.html'), false)
+  assert.match(result.stdout, /삭제함: mock-preview\.html$/m)
+})
+
 test('npm run clean:mock 용 스크립트는 mock 파일이 있으면 지우고, 없으면 아무 일도 하지 않는다', () => {
   const repo = makeRepo()
   repo.write('mock-preview.html')

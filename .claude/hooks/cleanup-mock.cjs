@@ -24,10 +24,20 @@ function isTracked(file) {
   }
 }
 
+// guard.config.json은 저장소 안의 파일이라 누구나 바꿀 수 있다. 목록에 "../../.ssh/id_rsa" 같은 경로를 넣어 저장소 밖 파일을
+// 지우게 만들 수 없도록, 저장소 안의 상대 경로이면서 파일 이름이 mock-preview.* 인 것만 지운다.
+const SAFE_NAME = /^mock-preview\.[A-Za-z0-9]+$/
+function isSafeMockPath(file) {
+  if (typeof file !== 'string' || path.isAbsolute(file) || file.split(/[\\/]/).includes('..')) return false
+  if (!SAFE_NAME.test(path.basename(file))) return false
+  const full = path.resolve(ROOT, file)
+  return full.startsWith(ROOT + path.sep)
+}
+
 // 지운 파일 목록(저장소 기준 경로)을 돌려준다.
 function removeMockFiles() {
   const removed = []
-  for (const file of config().mockFiles) {
+  for (const file of config().mockFiles.filter(isSafeMockPath)) {
     const full = path.join(ROOT, file)
     if (fs.existsSync(full) && !isTracked(file)) {
       fs.rmSync(full, { force: true })

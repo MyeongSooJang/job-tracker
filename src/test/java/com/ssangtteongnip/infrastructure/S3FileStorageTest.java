@@ -101,6 +101,17 @@ class S3FileStorageTest {
     }
 
     @Test
+    void 보기_주소는_내려받지_않고_바로_보여_주도록_inline으로_서명한다() {
+        PresignedUrl link = storage.presignedViewUrl("study-images/1/a.png");
+
+        assertThat(link.url())
+                .startsWith("https://test-bucket.s3.ap-northeast-2.amazonaws.com/study-images/1/a.png?")
+                .contains("X-Amz-Expires=300")
+                .contains("response-content-disposition=inline")
+                .doesNotContain("attachment");
+    }
+
+    @Test
     void 내려받기_주소는_버킷과_키를_가리키고_설정한_만료_시간과_파일명을_담는다() {
         PresignedUrl link = storage.presignedDownloadUrl("resumes/1/a.pdf", "이력서.pdf");
 

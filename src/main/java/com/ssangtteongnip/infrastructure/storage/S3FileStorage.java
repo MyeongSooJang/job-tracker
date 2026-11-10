@@ -75,6 +75,22 @@ public class S3FileStorage implements FileStorage {
         }
     }
 
+    @Override
+    public PresignedUrl presignedViewUrl(String key) {
+        GetObjectRequest request = GetObjectRequest.builder()
+                .bucket(properties.bucket())
+                .key(key)
+                .responseContentDisposition(ContentDisposition.inline().build().toString())
+                .build();
+        try {
+            PresignedGetObjectRequest presigned = presigner.presignGetObject(
+                    presign -> presign.signatureDuration(properties.presignTtl()).getObjectRequest(request));
+            return new PresignedUrl(presigned.url().toString(), presigned.expiration());
+        } catch (SdkException e) {
+            throw storageFailed("presign", key, e);
+        }
+    }
+
     private BusinessException storageFailed(String action, String key, SdkException cause) {
         log.error("S3 {} 실패: key={}", action, key, cause);
         return new BusinessException(ErrorCode.STORAGE_FAILED);

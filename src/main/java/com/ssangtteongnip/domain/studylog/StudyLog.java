@@ -1,5 +1,6 @@
 package com.ssangtteongnip.domain.studylog;
 
+import com.ssangtteongnip.domain.image.StudyImage;
 import com.ssangtteongnip.global.exception.BusinessException;
 import com.ssangtteongnip.global.exception.ErrorCode;
 import jakarta.persistence.*;
@@ -12,6 +13,9 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.LinkedHashSet;
+import java.util.Set;
+import java.util.UUID;
 
 @Entity
 @Table(name = "study_logs",
@@ -76,6 +80,18 @@ public class StudyLog {
         this.title = title;
         this.content = content;
         this.studyMinutes = studyMinutes;
+    }
+
+    // 본문이 쓰는 이미지들
+    public Set<UUID> imageIds() {
+        return StudyImage.referencedIn(content);
+    }
+
+    // 새 본문으로 바꾸면 더는 쓰지 않게 되는 이미지들 (바꾸기 전에 물어본다)
+    public Set<UUID> imageIdsRemovedBy(String newContent) {
+        Set<UUID> removed = new LinkedHashSet<>(imageIds());
+        removed.removeAll(StudyImage.referencedIn(newContent));
+        return removed;
     }
 
     public boolean isOn(LocalDate date) {

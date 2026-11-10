@@ -14,6 +14,9 @@ public interface StudyLogRepository {
     // 최신 날짜부터, 같은 날은 나중에 쓴 글이 먼저
     List<StudyLog> findInPeriod(Long userId, LocalDate from, LocalDate to);
 
+    // 어느 사용자의 글이든 본문에 이 문자열이 들어 있는지 (이미지 주소를 다른 글이 아직 쓰는지 확인할 때 쓴다)
+    boolean existsByContentContaining(String text);
+
     // 글이 있는 날짜 수 (같은 날 여러 글은 하루로 센다)
     long countStudyDatesBetween(Long userId, LocalDate from, LocalDate to);
 

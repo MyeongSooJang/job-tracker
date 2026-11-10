@@ -1,5 +1,6 @@
 package com.ssangtteongnip.application;
 
+import com.ssangtteongnip.application.service.StudyImageService;
 import com.ssangtteongnip.application.service.StudyLogService;
 import com.ssangtteongnip.application.service.dto.HeatmapDayResponse;
 import com.ssangtteongnip.application.service.dto.StudyLogCreateRequest;
@@ -12,6 +13,7 @@ import com.ssangtteongnip.global.exception.ErrorCode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -21,14 +23,18 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
 
 import static com.ssangtteongnip.support.ErrorCodeAssertions.assertErrorCode;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 @ExtendWith(MockitoExtension.class)
 class StudyLogServiceTest {
@@ -39,12 +45,13 @@ class StudyLogServiceTest {
     private static final LocalDate TODAY = LocalDate.of(2026, 11, 3);
 
     @Mock StudyLogRepository studyLogRepository;
+    @Mock StudyImageService studyImageService;
     StudyLogService studyLogService;
 
     @BeforeEach
     void setUp() {
         Clock clock = Clock.fixed(Instant.parse("2026-11-03T03:00:00Z"), SEOUL);
-        studyLogService = new StudyLogService(studyLogRepository, clock);
+        studyLogService = new StudyLogService(studyLogRepository, studyImageService, clock);
     }
 
     private StudyLog log(LocalDate date, int minutes) {
@@ -130,6 +137,68 @@ class StudyLogServiceTest {
         studyLogService.delete(USER_ID, LOG_ID);
 
         verify(studyLogRepository).delete(existing);
+    }
+
+    private static String image(UUID id) {
+        return "![](/api/images/" + id + ")";
+    }
+
+    @Test
+    void 글을_삭제하면_본문이_쓰던_이미지를_글을_지운_다음에_정리한다() {
+        UUID first = UUID.randomUUID();
+        UUID second = UUID.randomUUID();
+        StudyLog existing = StudyLog.create(USER_ID, TODAY, "제목", image(first) + image(second), 30, TODAY);
+        given(studyLogRepository.findByIdAndUserId(LOG_ID, USER_ID)).willReturn(Optional.of(existing));
+
+        studyLogService.delete(USER_ID, LOG_ID);
+
+        // 이미지를 쓰는 다른 글이 있는지 확인하려면 이 글이 먼저 지워져 있어야 한다.
+        InOrder order = inOrder(studyLogRepository, studyImageService);
+        order.verify(studyLogRepository).delete(existing);
+        order.verify(studyImageService).deleteUnused(USER_ID, Set.of(first, second));
+    }
+
+    @Test
+    void 이미지가_없는_글을_삭제하면_빈_후보로_정리를_요청한다() {
+        StudyLog existing = log(TODAY, 30);
+        given(studyLogRepository.findByIdAndUserId(LOG_ID, USER_ID)).willReturn(Optional.of(existing));
+
+        studyLogService.delete(USER_ID, LOG_ID);
+
+        verify(studyImageService).deleteUnused(USER_ID, Set.of());
+    }
+
+    @Test
+    void 글을_수정해_본문에서_빠진_이미지만_정리한다() {
+        UUID kept = UUID.randomUUID();
+        UUID removed = UUID.randomUUID();
+        StudyLog existing = StudyLog.create(USER_ID, TODAY, "제목", image(kept) + image(removed), 30, TODAY);
+        given(studyLogRepository.findByIdAndUserId(LOG_ID, USER_ID)).willReturn(Optional.of(existing));
+
+        studyLogService.update(USER_ID, LOG_ID, new StudyLogRequest("제목", "새 내용 " + image(kept), 30));
+
+        assertThat(existing.getContent()).contains(kept.toString()).doesNotContain(removed.toString());
+        verify(studyImageService).deleteUnused(USER_ID, Set.of(removed));
+    }
+
+    @Test
+    void 수정에_실패하면_이미지를_정리하지_않는다() {
+        StudyLog existing = StudyLog.create(USER_ID, TODAY, "제목", image(UUID.randomUUID()), 30, TODAY);
+        given(studyLogRepository.findByIdAndUserId(LOG_ID, USER_ID)).willReturn(Optional.of(existing));
+
+        assertErrorCode(() -> studyLogService.update(USER_ID, LOG_ID, new StudyLogRequest("제목", " ", 30)),
+                ErrorCode.STUDY_CONTENT_REQUIRED);
+
+        verifyNoInteractions(studyImageService);
+    }
+
+    @Test
+    void 다른_사용자의_글을_삭제하려_해도_이미지를_정리하지_않는다() {
+        given(studyLogRepository.findByIdAndUserId(LOG_ID, USER_ID)).willReturn(Optional.empty());
+
+        assertErrorCode(() -> studyLogService.delete(USER_ID, LOG_ID), ErrorCode.STUDY_LOG_NOT_FOUND);
+
+        verifyNoInteractions(studyImageService);
     }
 
     @Test

@@ -8,6 +8,7 @@ import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import java.time.LocalDate;
+import java.util.UUID;
 
 import static com.ssangtteongnip.support.ErrorCodeAssertions.assertErrorCode;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -19,6 +20,72 @@ class StudyLogTest {
 
     private StudyLog studyLog() {
         return StudyLog.create(USER_ID, TODAY, "JPA 정리", "JPA 연관관계 공부", 90, TODAY);
+    }
+
+    private static String image(UUID id) {
+        return "![](/api/images/" + id + ")";
+    }
+
+    private StudyLog studyLogWith(String content) {
+        return StudyLog.create(USER_ID, TODAY, "제목", content, 30, TODAY);
+    }
+
+    @Test
+    void 본문이_쓰는_이미지들을_알려_준다() {
+        UUID first = UUID.randomUUID();
+        UUID second = UUID.randomUUID();
+
+        StudyLog studyLog = studyLogWith("앞 " + image(first) + " 뒤 " + image(second));
+
+        assertThat(studyLog.imageIds()).containsExactlyInAnyOrder(first, second);
+    }
+
+    @Test
+    void 이미지가_없는_글은_이미지가_없다() {
+        assertThat(studyLog().imageIds()).isEmpty();
+    }
+
+    @Test
+    void 새_본문에서_빠지는_이미지만_알려_준다() {
+        UUID kept = UUID.randomUUID();
+        UUID removed = UUID.randomUUID();
+        StudyLog studyLog = studyLogWith(image(kept) + image(removed));
+
+        assertThat(studyLog.imageIdsRemovedBy("새 글 " + image(kept))).containsExactly(removed);
+    }
+
+    @Test
+    void 새_본문에도_그대로_있으면_빠지는_이미지가_아니다() {
+        UUID id = UUID.randomUUID();
+        StudyLog studyLog = studyLogWith(image(id));
+
+        assertThat(studyLog.imageIdsRemovedBy("다른 말 " + image(id))).isEmpty();
+    }
+
+    @Test
+    void 새_본문에_새_이미지만_더해지면_빠지는_이미지가_없다() {
+        StudyLog studyLog = studyLogWith("글");
+
+        assertThat(studyLog.imageIdsRemovedBy("글 " + image(UUID.randomUUID()))).isEmpty();
+    }
+
+    @Test
+    void 새_본문에서_이미지를_모두_지우면_전부_빠진다() {
+        UUID first = UUID.randomUUID();
+        UUID second = UUID.randomUUID();
+        StudyLog studyLog = studyLogWith(image(first) + image(second));
+
+        assertThat(studyLog.imageIdsRemovedBy("이미지 없음")).containsExactlyInAnyOrder(first, second);
+    }
+
+    @Test
+    void 물어보는_것만으로는_글이_바뀌지_않는다() {
+        UUID id = UUID.randomUUID();
+        StudyLog studyLog = studyLogWith(image(id));
+
+        studyLog.imageIdsRemovedBy("이미지 없음");
+
+        assertThat(studyLog.imageIds()).containsExactly(id);
     }
 
     @Test

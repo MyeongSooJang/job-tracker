@@ -65,6 +65,20 @@ class StudyImageRepositoryTest {
     }
 
     @Test
+    void 지운_이미지는_더는_찾을_수_없고_다른_이미지는_남는다() {
+        StudyImage deleted = studyImageRepository.save(StudyImage.upload(USER_ID, PNG, storage));
+        StudyImage kept = studyImageRepository.save(StudyImage.upload(USER_ID, PNG, storage));
+        em.flush();
+
+        studyImageRepository.delete(deleted);
+        em.flush();
+        em.clear();
+
+        assertThat(studyImageRepository.findByPublicId(deleted.getPublicId())).isEmpty();
+        assertThat(studyImageRepository.findByPublicId(kept.getPublicId())).isPresent();
+    }
+
+    @Test
     void 없는_공개_아이디는_찾을_수_없다() {
         Optional<StudyImage> found = studyImageRepository.findByPublicId(UUID.randomUUID());
 

@@ -12,7 +12,11 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
+import java.util.LinkedHashSet;
+import java.util.Set;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 // 학습 기록 본문에 넣는 이미지. 본문에는 객체 키가 아니라 추측할 수 없는 publicId 경로만 남기고,
 // 보여줄 때마다 서버가 짧게 유효한 presigned URL로 안내한다. 그래서 버킷은 비공개로 두면서도 본문의 주소는 만료되지 않는다.
@@ -25,6 +29,8 @@ public class StudyImage {
 
     public static final int MAX_SIZE_BYTES = 5 * 1024 * 1024;
     private static final String PUBLIC_PATH_PREFIX = "/api/images/";
+    private static final Pattern REFERENCE = Pattern.compile(Pattern.quote(PUBLIC_PATH_PREFIX)
+            + "([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})");
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -60,6 +66,27 @@ public class StudyImage {
         image.sizeBytes = content.length;
         storage.put(image.objectKey, content, image.contentType);
         return image;
+    }
+
+    // 본문(마크다운)이 가리키는 이미지의 공개 아이디들. 본문에 주소를 적는 형식(publicPath)을 한곳에서만 안다.
+    public static Set<UUID> referencedIn(String markdown) {
+        Set<UUID> ids = new LinkedHashSet<>();
+        if (markdown == null) {
+            return ids;
+        }
+        Matcher matcher = REFERENCE.matcher(markdown);
+        while (matcher.find()) {
+            ids.add(UUID.fromString(matcher.group(1)));
+        }
+        return ids;
+    }
+
+    public boolean isOwnedBy(Long userId) {
+        return this.userId.equals(userId);
+    }
+
+    public void deleteFrom(FileStorage storage) {
+        storage.delete(objectKey);
     }
 
     public PresignedUrl viewUrl(FileStorage storage) {

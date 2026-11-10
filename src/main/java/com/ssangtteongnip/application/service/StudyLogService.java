@@ -20,6 +20,8 @@ import java.time.Clock;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -30,6 +32,7 @@ public class StudyLogService {
     private static final int MAX_LIST_DAYS = 62;
 
     private final StudyLogRepository studyLogRepository;
+    private final StudyImageService studyImageService;
     private final Clock clock;
 
     @Transactional
@@ -42,7 +45,9 @@ public class StudyLogService {
     @Transactional
     public StudyLogResponse update(Long userId, Long id, StudyLogRequest request) {
         StudyLog studyLog = findOrThrow(userId, id);
+        Set<UUID> removedImages = studyLog.imageIdsRemovedBy(request.content());
         studyLog.write(request.title(), request.content(), request.minutesOrZero());
+        studyImageService.deleteUnused(userId, removedImages);
         return StudyLogResponse.from(studyLog);
     }
 
@@ -59,7 +64,10 @@ public class StudyLogService {
 
     @Transactional
     public void delete(Long userId, Long id) {
-        studyLogRepository.delete(findOrThrow(userId, id));
+        StudyLog studyLog = findOrThrow(userId, id);
+        Set<UUID> images = studyLog.imageIds();
+        studyLogRepository.delete(studyLog);
+        studyImageService.deleteUnused(userId, images);
     }
 
     public List<HeatmapDayResponse> heatmap(Long userId, LocalDate from, LocalDate to) {

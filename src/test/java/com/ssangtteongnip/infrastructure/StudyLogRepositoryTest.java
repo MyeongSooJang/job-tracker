@@ -1,6 +1,7 @@
 package com.ssangtteongnip.infrastructure;
 
 import com.ssangtteongnip.domain.studylog.StudyLog;
+import com.ssangtteongnip.domain.studylog.StudyLogRepository;
 import com.ssangtteongnip.global.config.JpaConfig;
 import com.ssangtteongnip.infrastructure.persistence.StudyLogJpaRepository;
 import org.junit.jupiter.api.Test;
@@ -97,5 +98,58 @@ class StudyLogRepositoryTest {
                 OWNER, LocalDate.of(2026, 11, 1), LocalDate.of(2026, 11, 30));
 
         assertThat(count).isEqualTo(2);
+    }
+
+    private StudyLog saveWithContent(Long userId, String content) {
+        return studyLogRepository.saveAndFlush(StudyLog.create(userId, TODAY, "제목", content, 60, TODAY));
+    }
+
+    @Test
+    void 본문에_문자열이_들어_있는_글이_있으면_참조하고_있다고_답한다() {
+        saveWithContent(OWNER, "앞 ![](/api/images/3f2b8c1e-0000-4000-8000-000000000001) 뒤");
+
+        assertThat(studyLogRepository.existsByContentContaining("/api/images/3f2b8c1e-0000-4000-8000-000000000001")).isTrue();
+    }
+
+    @Test
+    void 어느_글의_본문에도_없으면_참조하지_않는다고_답한다() {
+        saveWithContent(OWNER, "이미지 없는 글");
+
+        assertThat(studyLogRepository.existsByContentContaining("/api/images/3f2b8c1e-0000-4000-8000-000000000001")).isFalse();
+    }
+
+    @Test
+    void 다른_사용자의_글이_참조해도_참조하고_있다고_답한다() {
+        saveWithContent(OTHER, "![](/api/images/3f2b8c1e-0000-4000-8000-000000000001)");
+
+        assertThat(studyLogRepository.existsByContentContaining("/api/images/3f2b8c1e-0000-4000-8000-000000000001")).isTrue();
+    }
+
+    @Test
+    void 밑줄과_퍼센트는_와일드카드가_아니라_글자_그대로_찾는다() {
+        saveWithContent(OWNER, "abc");
+
+        assertThat(studyLogRepository.existsByContentContaining("a_c")).isFalse();
+        assertThat(studyLogRepository.existsByContentContaining("a%c")).isFalse();
+    }
+
+    @Test
+    void 글_본문을_바꾸면_따로_저장하지_않아도_바뀐_본문_기준으로_찾는다() {
+        StudyLog saved = saveWithContent(OWNER, "![](/api/images/3f2b8c1e-0000-4000-8000-000000000001)");
+
+        saved.write("제목", "이미지를 뺀 새 본문", 60);
+
+        // 서비스는 글을 고친 같은 트랜잭션에서 곧바로 이 질문을 한다. 변경이 반영되어 있어야 이미지를 지울 수 있다.
+        assertThat(studyLogRepository.existsByContentContaining("/api/images/3f2b8c1e-0000-4000-8000-000000000001")).isFalse();
+    }
+
+    @Test
+    void 글을_지우면_따로_저장하지_않아도_더는_참조하지_않는다() {
+        StudyLog saved = saveWithContent(OWNER, "![](/api/images/3f2b8c1e-0000-4000-8000-000000000001)");
+
+        // 서비스가 쓰는 도메인 저장소 인터페이스로 지운다.
+        ((StudyLogRepository) studyLogRepository).delete(saved);
+
+        assertThat(studyLogRepository.existsByContentContaining("/api/images/3f2b8c1e-0000-4000-8000-000000000001")).isFalse();
     }
 }

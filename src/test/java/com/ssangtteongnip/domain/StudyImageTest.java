@@ -7,9 +7,12 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Stream;
 
 import static com.ssangtteongnip.support.ErrorCodeAssertions.assertErrorCode;
@@ -134,6 +137,74 @@ class StudyImageTest {
 
         assertThat(StudyImage.upload(USER_ID, atLimit, storage).getSizeBytes()).isEqualTo(StudyImage.MAX_SIZE_BYTES);
         assertErrorCode(() -> StudyImage.upload(USER_ID, overLimit, storage), ErrorCode.FILE_TOO_LARGE);
+    }
+
+    @Test
+    void 본문에서_이미지_주소의_공개_아이디를_모두_찾는다() {
+        StudyImage first = StudyImage.upload(USER_ID, PNG, storage);
+        StudyImage second = StudyImage.upload(USER_ID, PNG, storage);
+        String markdown = "## 제목\n![](" + first.publicPath() + ")\n설명\n![그림](" + second.publicPath() + ")";
+
+        assertThat(StudyImage.referencedIn(markdown)).containsExactlyInAnyOrder(first.getPublicId(), second.getPublicId());
+    }
+
+    @Test
+    void 같은_이미지를_여러_번_써도_한_번만_센다() {
+        StudyImage image = StudyImage.upload(USER_ID, PNG, storage);
+
+        Set<UUID> ids = StudyImage.referencedIn(image.publicPath() + " 그리고 " + image.publicPath());
+
+        assertThat(ids).containsExactly(image.getPublicId());
+    }
+
+    @Test
+    void 도메인이_붙은_주소나_HTML_태그_안의_주소도_찾는다() {
+        UUID id = UUID.randomUUID();
+
+        assertThat(StudyImage.referencedIn("![](https://api.example.com/api/images/" + id + ")")).containsExactly(id);
+        assertThat(StudyImage.referencedIn("<img src=\"/api/images/" + id + "\">")).containsExactly(id);
+    }
+
+    @Test
+    void 대문자로_적힌_아이디도_같은_이미지로_본다() {
+        UUID id = UUID.randomUUID();
+
+        assertThat(StudyImage.referencedIn("/api/images/" + id.toString().toUpperCase())).containsExactly(id);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "/api/images/not-a-uuid",
+            "/api/me/images/3f2b8c1e-0000-4000-8000-000000000001",
+            "https://cdn.example.com/images/3f2b8c1e-0000-4000-8000-000000000001",
+            "/api/images/3f2b8c1e-0000-4000-8000",
+            "그냥 글",
+            ""})
+    void 이미지_주소_형식이_아니면_이미지로_보지_않는다(String markdown) {
+        assertThat(StudyImage.referencedIn(markdown)).isEmpty();
+    }
+
+    @Test
+    void 본문이_null이면_이미지가_없다() {
+        assertThat(StudyImage.referencedIn(null)).isEmpty();
+    }
+
+    @Test
+    void 올린_사람만_자기_이미지의_주인이다() {
+        StudyImage image = StudyImage.upload(USER_ID, PNG, storage);
+
+        assertThat(image.isOwnedBy(USER_ID)).isTrue();
+        assertThat(image.isOwnedBy(USER_ID + 1)).isFalse();
+    }
+
+    @Test
+    void 저장소에서_이미지_객체를_지운다() {
+        StudyImage image = StudyImage.upload(USER_ID, PNG, storage);
+        assertThat(storage.contains(image.getObjectKey())).isTrue();
+
+        image.deleteFrom(storage);
+
+        assertThat(storage.contains(image.getObjectKey())).isFalse();
     }
 
     @Test

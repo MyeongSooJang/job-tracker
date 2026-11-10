@@ -8,3 +8,6 @@ out/
 .env
 __pycache__/
 docs/superpowers/
+
+# Claude 훅이 남기는 로컬 기록(보안 리뷰·커밋 스킬 실행 여부)
+.claude/.state/

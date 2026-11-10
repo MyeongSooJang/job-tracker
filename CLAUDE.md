@@ -111,3 +111,20 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - 작업 중 내용이 바뀔 때마다 그 자리에서 커밋한다. 특히 스킬을 만들거나 고칠 때는 초안, 테스트 후 수정 1회마다 각각 커밋하고, 본문에 "무엇이 잘못 나왔고 왜 바꿨는지"를 적는다. 끝난 뒤 한 번에 커밋하지 않는다. 문제가 자주 생기는 지점을 커밋 이력에서 찾아 개선하기 위해서다.
 - 엔티티(`@Entity`/`@Embeddable`)의 테이블·컬럼·관계를 바꾸면 같은 커밋에서 `docs/ERD.md`도 고친다. `.claude/hooks/erd-guard.py`가 엔티티 수정 시 알려주고, ERD 없이 엔티티만 커밋하려 하면 차단한다. `ddl-auto: update`는 컬럼 추가만 하므로 운영 DB에 직접 DDL이 필요한지도 함께 확인한다.
 - `fix` 커밋 본문에는 `원인:`, `영향:`, `놓친 이유:`, `재발 방지:`를 항목당 150자 이내로, 신입이 읽어도 이해되게 전문용어를 풀어 적는다(선택: `핵심 파일:`로 변경 전/후를 보여 줄 파일 지정). `.claude/hooks/incident-report.py`가 항목이 없으면 커밋을 차단하고, 있으면 핵심 코드의 변경 전/후가 담긴 `docs/incidents/*.html`을 만들어 같은 커밋에 넣는다. 이미 만든 커밋은 `python .claude/hooks/incident-report.py --from-commit <sha> --set "원인=..."`으로 만든다. 훅 테스트는 `python -m unittest discover -s .claude/hooks -p "test_*.py"`.
+
+## Hook으로 강제되는 규칙
+
+지침만으로는 놓칠 수 있어서, 아래 규칙은 `.claude/settings.json`의 Hook(`.claude/hooks/guard.cjs`)이 명령 실행 직전에 검사하고 어기면 **차단**한다.
+
+| 상황 | 검사 | 어기면 |
+|---|---|---|
+| `gh pr create` | 현재 커밋(HEAD)에 대한 `/security-review` 기록이 있는가 | 차단 (스킬을 실행한다) |
+| `gh pr merge` | PR 최신 커밋에 대한 `/security-review` 기록이 있는가 | 차단 |
+| `git commit`, `gh pr create` | `commit-and-pr-format` 스킬을 이 세션에서 실행했는가 | 스킬이 설치돼 있으면 차단, 없으면 알리기만 한다 |
+
+- **보안 리뷰는 커밋마다 유효하다.** 리뷰 뒤에 커밋이 하나라도 늘면(테스트·문서 커밋 포함) PR을 만들거나 머지하기 전에 `/security-review`를 다시 실행한다. 그래서 리뷰는 **마지막 커밋 뒤에** 돌린다. 위의 "인증·한도·중복 방지 코드는 PR 전에 `/code-review`(인증이면 `/security-review`)" 규칙과 함께 지킨다.
+- 스킬 실행 기록은 `mark-skill.cjs`(PostToolUse)가 `.claude/.state/`(git 제외)에 남긴다. 스킬을 **호출한** 사실만 기록하며, 리뷰 결과를 반영했는지는 확인하지 못한다.
+- 훅 동작 검증: `node --test .claude/hooks/guard-check.cjs` (임시 git 저장소에 스크립트를 복사해 실행한다). 훅을 고치면 함께 돌린다.
+- 같은 스크립트가 프론트엔드 저장소에도 있다(`guard.config.json`만 다르다). 한쪽을 고치면 다른 쪽도 같이 고친다.
+- 훅은 명령 문자열에서 heredoc·따옴표 속 글을 제외하고 판단하며, `cd 경로 &&`로 다른 저장소에서 실행하는 명령에는 적용하지 않는다. 사용자가 직접 입력하는 `! 명령`은 훅을 거치지 않는다.
+- 새 훅 설정은 이미 열려 있는 세션에서는 `/hooks`를 한 번 열거나 세션을 다시 시작해야 적용될 수 있다.

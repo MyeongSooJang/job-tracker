@@ -133,6 +133,23 @@ public class Application {
         moveTo(ApplicationStatus.REJECTED);
     }
 
+    // 서류 제출 상태로 마감일의 한 달 뒤 날짜가 지난 지원을 자동 불합격으로 바꾼다.
+    // 바꿨으면 true, 대상이 아니면 아무것도 바꾸지 않고 false를 돌려준다.
+    public boolean rejectIfDeadlineExpired(LocalDateTime now) {
+        if (!isDeadlineExpired(now.toLocalDate())) {
+            return false;
+        }
+        moveTo(ApplicationStatus.REJECTED);
+        this.autoRejectedAt = now;
+        return true;
+    }
+
+    private boolean isDeadlineExpired(LocalDate today) {
+        return status == ApplicationStatus.RESUME_SUBMITTED
+                && deadline != null
+                && today.isAfter(deadline.plusMonths(1));
+    }
+
     private void moveTo(ApplicationStatus next) {
         if (!this.status.canAdvanceTo(next)) {
             throw new BusinessException(ErrorCode.INVALID_STATUS_TRANSITION);

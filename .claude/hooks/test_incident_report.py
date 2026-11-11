@@ -142,7 +142,7 @@ class HookRunTest(unittest.TestCase):
         self.assertEqual(result.returncode, 2)
         self.assertIn("150자", result.stderr)
 
-    def test_add와_커밋을_한_명령으로_실행해도_변경_전후를_담은_보고서를_스테이징한다(self):
+    def test_add와_커밋을_한_명령으로_실행해도_변경_전후를_담은_보고서를_만들고_스테이징하지_않는다(self):
         command = f"git add -A && git commit -q -F - <<'EOF'\n{FIX_MESSAGE}\nEOF"
 
         result = self.run_hook(command)
@@ -154,7 +154,7 @@ class HookRunTest(unittest.TestCase):
         self.assertIn("int v = 1;", html)
         self.assertIn("int v = 2;", html)
         self.assertIn("순차 테스트만 있었다", html)
-        self.assertIn(f"docs/incidents/{reports[0].name}", self.git("diff", "--cached", "--name-only").stdout)
+        self.assertNotIn("docs/incidents", self.git("diff", "--cached", "--name-only").stdout)
 
 
 if __name__ == "__main__":

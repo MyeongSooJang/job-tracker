@@ -7,7 +7,9 @@ build/
 out/
 .env
 __pycache__/
-docs/superpowers/
+# docs/는 ERD.md만 추적한다. 나머지(설계·계획, 장애 분석, 운영 메모)는 로컬 전용이다.
+docs/*
+!docs/ERD.md
 
 # Claude 훅이 남기는 로컬 기록(보안 리뷰·커밋 스킬 실행 여부)
 .claude/.state/

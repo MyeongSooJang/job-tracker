@@ -5,6 +5,8 @@ import com.ssangtteongnip.application.service.CompanyService;
 import com.ssangtteongnip.application.service.dto.ApplicationJobSiteRequest;
 import com.ssangtteongnip.application.service.dto.ApplicationRequest;
 import com.ssangtteongnip.application.service.dto.ApplicationStatusRequest;
+import com.ssangtteongnip.application.service.dto.JobSiteStatisticsResponse;
+import com.ssangtteongnip.domain.application.JobSiteStatistics;
 import com.ssangtteongnip.domain.application.Application;
 import com.ssangtteongnip.domain.application.ApplicationRepository;
 import com.ssangtteongnip.domain.application.ApplicationStatus;
@@ -18,6 +20,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 
 import static com.ssangtteongnip.support.ErrorCodeAssertions.assertErrorCode;
@@ -103,11 +106,24 @@ class ApplicationServiceTest {
     }
 
     @Test
+    void 사이트별_집계는_서류_통과율을_계산해_응답한다() {
+        given(applicationRepository.summarizeByJobSite(OWNER_ID)).willReturn(List.of(
+                new JobSiteStatistics(JobSite.SARAMIN, 10, 3),
+                new JobSiteStatistics(JobSite.WANTED, 2, 0)));
+
+        List<JobSiteStatisticsResponse> responses = applicationService.summarizeByJobSite(OWNER_ID);
+
+        assertThat(responses).containsExactly(
+                new JobSiteStatisticsResponse(JobSite.SARAMIN, 10, 3, 0.3),
+                new JobSiteStatisticsResponse(JobSite.WANTED, 2, 0, 0.0));
+    }
+
+    @Test
     void 불합격은_직접_전환할_수_있다() {
         Application app = application();
         given(applicationRepository.findById(APPLICATION_ID)).willReturn(Optional.of(app));
 
-        applicationService.advanceStatus(OWNER_ID, APPLICATION_ID, new ApplicationStatusRequest(ApplicationStatus.REJECTED));
+        applicationService.decideResult(OWNER_ID, APPLICATION_ID, new ApplicationStatusRequest(ApplicationStatus.REJECTED));
 
         assertThat(app.getStatus()).isEqualTo(ApplicationStatus.REJECTED);
     }
@@ -115,9 +131,10 @@ class ApplicationServiceTest {
     @Test
     void 면접으로는_직접_전환할_수_없고_면접_일정을_등록해야_한다() {
         Application app = application();
+        given(applicationRepository.findById(APPLICATION_ID)).willReturn(Optional.of(app));
 
         assertErrorCode(
-                () -> applicationService.advanceStatus(OWNER_ID, APPLICATION_ID, new ApplicationStatusRequest(ApplicationStatus.INTERVIEW)),
+                () -> applicationService.decideResult(OWNER_ID, APPLICATION_ID, new ApplicationStatusRequest(ApplicationStatus.INTERVIEW)),
                 ErrorCode.INTERVIEW_SCHEDULE_REQUIRED);
         assertThat(app.getStatus()).isEqualTo(ApplicationStatus.RESUME_SUBMITTED);
     }
@@ -128,7 +145,7 @@ class ApplicationServiceTest {
         given(applicationRepository.findById(APPLICATION_ID)).willReturn(Optional.of(app));
 
         assertErrorCode(
-                () -> applicationService.advanceStatus(OTHER_USER_ID, APPLICATION_ID, new ApplicationStatusRequest(ApplicationStatus.REJECTED)),
+                () -> applicationService.decideResult(OTHER_USER_ID, APPLICATION_ID, new ApplicationStatusRequest(ApplicationStatus.REJECTED)),
                 ErrorCode.APPLICATION_NOT_FOUND);
         assertThat(app.getStatus()).isEqualTo(ApplicationStatus.RESUME_SUBMITTED);
     }

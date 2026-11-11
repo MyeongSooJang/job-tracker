@@ -4,6 +4,7 @@ import com.ssangtteongnip.application.service.ApplicationService;
 import com.ssangtteongnip.application.service.dto.ApplicationJobSiteRequest;
 import com.ssangtteongnip.application.service.dto.ApplicationRequest;
 import com.ssangtteongnip.application.service.dto.ApplicationStatusRequest;
+import com.ssangtteongnip.application.service.dto.JobSiteStatisticsResponse;
 import com.ssangtteongnip.domain.application.Application;
 import com.ssangtteongnip.domain.application.ApplicationStatus;
 import jakarta.validation.Valid;
@@ -36,6 +37,11 @@ public class ApplicationController {
                 : applicationService.findByStatus(userId, status);
     }
 
+    @GetMapping("/stats/job-site")
+    public List<JobSiteStatisticsResponse> summarizeByJobSite(@AuthenticationPrincipal Long userId) {
+        return applicationService.summarizeByJobSite(userId);
+    }
+
     @GetMapping("/{id}")
     public Application findById(@AuthenticationPrincipal Long userId, @PathVariable Long id) {
         return applicationService.findById(userId, id);
@@ -49,9 +55,9 @@ public class ApplicationController {
     }
 
     @PatchMapping("/{id}/status")
-    public Application advanceStatus(@AuthenticationPrincipal Long userId,
-                                     @PathVariable Long id,
-                                     @RequestBody @Valid ApplicationStatusRequest request) {
-        return applicationService.advanceStatus(userId, id, request);
+    public Application decideResult(@AuthenticationPrincipal Long userId,
+                                    @PathVariable Long id,
+                                    @RequestBody @Valid ApplicationStatusRequest request) {
+        return applicationService.decideResult(userId, id, request);
     }
 }

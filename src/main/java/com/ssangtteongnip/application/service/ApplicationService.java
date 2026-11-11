@@ -3,6 +3,7 @@ package com.ssangtteongnip.application.service;
 import com.ssangtteongnip.application.service.dto.ApplicationJobSiteRequest;
 import com.ssangtteongnip.application.service.dto.ApplicationRequest;
 import com.ssangtteongnip.application.service.dto.ApplicationStatusRequest;
+import com.ssangtteongnip.application.service.dto.JobSiteStatisticsResponse;
 import com.ssangtteongnip.domain.application.Application;
 import com.ssangtteongnip.domain.application.ApplicationRepository;
 import com.ssangtteongnip.domain.application.ApplicationStatus;
@@ -40,6 +41,12 @@ public class ApplicationService {
         return applicationRepository.findByUserIdAndStatus(userId, status);
     }
 
+    public List<JobSiteStatisticsResponse> summarizeByJobSite(Long userId) {
+        return applicationRepository.summarizeByJobSite(userId).stream()
+                .map(JobSiteStatisticsResponse::from)
+                .toList();
+    }
+
     public Application findById(Long userId, Long id) {
         Application application = applicationRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.APPLICATION_NOT_FOUND));
@@ -55,12 +62,9 @@ public class ApplicationService {
     }
 
     @Transactional
-    public Application advanceStatus(Long userId, Long id, ApplicationStatusRequest request) {
-        if (request.status() == ApplicationStatus.INTERVIEW) {
-            throw new BusinessException(ErrorCode.INTERVIEW_SCHEDULE_REQUIRED);
-        }
+    public Application decideResult(Long userId, Long id, ApplicationStatusRequest request) {
         Application application = findById(userId, id);
-        application.advanceStatus(request.status());
+        request.status().applyTo(application);
         return application;
     }
 }

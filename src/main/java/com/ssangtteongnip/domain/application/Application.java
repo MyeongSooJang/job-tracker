@@ -45,6 +45,9 @@ public class Application {
     @Enumerated(EnumType.STRING)
     private JobSite jobSite;
 
+    // 서류 통과(면접 일정이 처음 잡힌) 시점. 이후 불합격이 되어도 유지되며, 서류 탈락이면 null이다.
+    private LocalDateTime documentPassedAt;
+
     @CreatedDate
     @Column(updatable = false)
     private LocalDateTime createdAt;
@@ -82,7 +85,29 @@ public class Application {
         this.jobSite = Objects.requireNonNull(jobSite);
     }
 
-    public void advanceStatus(ApplicationStatus next) {
+    public boolean isDocumentPassed() {
+        return documentPassedAt != null;
+    }
+
+    // 면접 일정이 잡혔을 때 호출한다. 서류 제출 상태일 때만 면접으로 전이하며 서류 통과 시점을 한 번만 기록한다.
+    public void startInterview(LocalDateTime now) {
+        if (this.status.canAdvanceTo(ApplicationStatus.INTERVIEW)) {
+            this.status = ApplicationStatus.INTERVIEW;
+            this.documentPassedAt = now;
+        }
+    }
+
+    // 최종 합격. 면접 중인 지원만 합격할 수 있다.
+    public void accept() {
+        moveTo(ApplicationStatus.ACCEPTED);
+    }
+
+    // 불합격. 서류 탈락(서류 제출 상태)과 면접 후 불합격(면접 상태) 모두 가능하다.
+    public void reject() {
+        moveTo(ApplicationStatus.REJECTED);
+    }
+
+    private void moveTo(ApplicationStatus next) {
         if (!this.status.canAdvanceTo(next)) {
             throw new BusinessException(ErrorCode.INVALID_STATUS_TRANSITION);
         }

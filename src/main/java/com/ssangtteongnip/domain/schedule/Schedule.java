@@ -51,6 +51,10 @@ public class Schedule {
         }
     }
 
+    public boolean isInterview() {
+        return type == ScheduleType.INTERVIEW;
+    }
+
     public void changeAddress(String address) {
         this.address = address;
     }

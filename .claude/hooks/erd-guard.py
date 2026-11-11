@@ -10,6 +10,9 @@ import subprocess
 import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from scope import in_project  # noqa: E402
+
 ERD_PATH = "docs/ERD.md"
 ENTITY_RE = re.compile(r"@(Entity|Embeddable)\b")
 COMMIT_RE = re.compile(r"\bgit\b(?:\s+-[Cc]\s+\S+)*\s+commit\b")
@@ -61,6 +64,8 @@ def main() -> None:
     sys.stdout.reconfigure(encoding="utf-8")
     sys.stderr.reconfigure(encoding="utf-8")
     event = json.load(sys.stdin)
+    if not in_project(event):
+        return
     tool_input = event.get("tool_input", {})
     if event.get("hook_event_name") == "PostToolUse":
         remind(tool_input.get("file_path", ""))

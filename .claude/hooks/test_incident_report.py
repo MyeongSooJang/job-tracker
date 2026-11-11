@@ -1,6 +1,7 @@
 """incident-report 훅 테스트. 실행: python -m unittest discover -s .claude/hooks -p "test_*.py" """
 import importlib.util
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -116,8 +117,10 @@ class HookRunTest(unittest.TestCase):
 
     def run_hook(self, command):
         payload = json.dumps({"hook_event_name": "PreToolUse", "tool_input": {"command": command}})
+        env = {**os.environ, "CLAUDE_PROJECT_DIR": str(self.repo)}
         return subprocess.run(
-            [sys.executable, str(HOOK)], cwd=self.repo, input=payload, capture_output=True, text=True, encoding="utf-8")
+            [sys.executable, str(HOOK)], cwd=self.repo, input=payload, capture_output=True, text=True,
+            encoding="utf-8", env=env)
 
     def test_fix가_아닌_커밋은_아무것도_하지_않는다(self):
         result = self.run_hook("git commit -m 'feat: 기능 추가'")

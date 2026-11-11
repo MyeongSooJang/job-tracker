@@ -4,7 +4,6 @@ import com.ssangtteongnip.domain.application.Application;
 import com.ssangtteongnip.domain.review.Review;
 import com.ssangtteongnip.domain.review.ReviewRepository;
 import com.ssangtteongnip.domain.schedule.Schedule;
-import com.ssangtteongnip.domain.schedule.ScheduleType;
 import com.ssangtteongnip.domain.schedule.ScheduleRepository;
 import com.ssangtteongnip.application.service.dto.ScheduleAddressRequest;
 import com.ssangtteongnip.application.service.dto.ScheduleRequest;
@@ -35,14 +34,17 @@ public class ScheduleService {
                 Schedule.create(application, request.title(), request.scheduledAt(),
                         request.type(), request.address(), request.note())
         );
-        if (request.type() == ScheduleType.INTERVIEW) {
+        if (schedule.isInterview()) {
             application.startInterview(LocalDateTime.now(clock));
-        }
-        if (request.type() == ScheduleType.INTERVIEW
-                && !reviewRepository.existsByApplicationId(application.getId())) {
-            reviewRepository.save(Review.create(application));
+            createReviewIfAbsent(application);
         }
         return schedule;
+    }
+
+    private void createReviewIfAbsent(Application application) {
+        if (!reviewRepository.existsByApplicationId(application.getId())) {
+            reviewRepository.save(Review.create(application));
+        }
     }
 
     @Transactional

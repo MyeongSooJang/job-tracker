@@ -43,7 +43,7 @@ public class Company {
         return company;
     }
 
-    public void update(String name, String industry, String website) {
+    public void reviseInfo(String name, String industry, String website) {
         this.name = name;
         this.industry = industry;
         this.website = website;

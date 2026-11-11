@@ -135,4 +135,36 @@ class ReviewTest {
 
         assertErrorCode(() -> review.verifyOwner(OTHER_USER_ID), ErrorCode.REVIEW_NOT_FOUND);
     }
+
+    @Test
+    void 후기를_작성하면_평점과_면접_상세가_함께_저장된다() {
+        Review review = review();
+
+        review.compose("분위기가 좋았다", 4, 3, InterviewAtmosphere.COMFORTABLE, ApplyRoute.REFERRAL, List.of("자기소개"));
+
+        assertThat(review.getContent()).isEqualTo("분위기가 좋았다");
+        assertThat(review.getRating()).isEqualTo(4);
+        assertThat(review.getDifficulty()).isEqualTo(3);
+        assertThat(review.getQuestions()).containsExactly("자기소개");
+    }
+
+    @Test
+    void 면접_난이도가_잘못되면_평점과_내용도_저장되지_않는다() {
+        Review review = review();
+
+        assertErrorCode(() -> review.compose("내용", 4, 6, null, null, List.of()), ErrorCode.INVALID_DIFFICULTY);
+
+        assertThat(review.getContent()).isNull();
+        assertThat(review.getRating()).isNull();
+    }
+
+    @Test
+    void 평점이_잘못되면_면접_상세도_저장되지_않는다() {
+        Review review = review();
+
+        assertErrorCode(() -> review.compose("내용", 0, 3, null, null, List.of("자기소개")), ErrorCode.INVALID_RATING);
+
+        assertThat(review.getDifficulty()).isNull();
+        assertThat(review.getQuestions()).isEmpty();
+    }
 }

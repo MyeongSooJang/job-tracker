@@ -31,10 +31,10 @@ public class StudyLogController {
     }
 
     @PutMapping("/{id}")
-    public StudyLogResponse update(@AuthenticationPrincipal Long userId,
+    public StudyLogResponse rewrite(@AuthenticationPrincipal Long userId,
                                    @PathVariable Long id,
                                    @RequestBody @Valid StudyLogRequest request) {
-        return studyLogService.update(userId, id, request);
+        return studyLogService.rewrite(userId, id, request);
     }
 
     @GetMapping("/{id}")

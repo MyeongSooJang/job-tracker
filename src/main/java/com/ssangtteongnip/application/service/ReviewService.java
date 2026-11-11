@@ -27,8 +27,8 @@ public class ReviewService {
         Review review = reviewRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.REVIEW_NOT_FOUND));
         review.verifyOwner(userId);
-        review.write(request.content(), request.rating());
-        review.describeInterview(request.difficulty(), request.atmosphere(), request.route(), request.questions());
+        review.compose(request.content(), request.rating(), request.difficulty(), request.atmosphere(),
+                request.route(), request.questions());
         return review;
     }
 }

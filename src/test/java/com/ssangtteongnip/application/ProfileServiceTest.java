@@ -82,7 +82,7 @@ class ProfileServiceTest {
         given(profileRepository.findByUserId(USER_ID)).willReturn(Optional.of(profile()));
         given(resumeFileRepository.findSummaryByUserId(USER_ID)).willReturn(Optional.empty());
 
-        ProfileResponse response = profileService.updateMyProfile(USER_ID, request("홍길순"));
+        ProfileResponse response = profileService.reviseMyProfile(USER_ID, request("홍길순"));
 
         assertThat(response.name()).isEqualTo("홍길순");
         assertThat(response.phone()).isEqualTo("010-1234-5678");
@@ -94,6 +94,6 @@ class ProfileServiceTest {
     void 프로필이_없으면_수정할_수_없다() {
         given(profileRepository.findByUserId(USER_ID)).willReturn(Optional.empty());
 
-        assertErrorCode(() -> profileService.updateMyProfile(USER_ID, request("홍길순")), ErrorCode.PROFILE_NOT_FOUND);
+        assertErrorCode(() -> profileService.reviseMyProfile(USER_ID, request("홍길순")), ErrorCode.PROFILE_NOT_FOUND);
     }
 }

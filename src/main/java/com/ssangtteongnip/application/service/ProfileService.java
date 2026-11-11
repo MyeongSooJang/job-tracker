@@ -25,9 +25,9 @@ public class ProfileService {
     }
 
     @Transactional
-    public ProfileResponse updateMyProfile(Long userId, ProfileRequest request) {
+    public ProfileResponse reviseMyProfile(Long userId, ProfileRequest request) {
         Profile profile = findProfile(userId);
-        profile.update(request.name(), request.toPersonalInfo());
+        profile.reviseNameAndInfo(request.name(), request.toPersonalInfo());
         return toResponse(userId, profile);
     }
 

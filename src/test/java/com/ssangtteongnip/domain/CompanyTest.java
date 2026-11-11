@@ -19,7 +19,7 @@ class CompanyTest {
     @Test
     void update_회사_정보를_수정한다() {
         Company company = Company.create("카카오", "IT", "https://kakao.com");
-        company.update("카카오뱅크", "핀테크", "https://kakaobank.com");
+        company.reviseInfo("카카오뱅크", "핀테크", "https://kakaobank.com");
 
         assertThat(company.getName()).isEqualTo("카카오뱅크");
         assertThat(company.getIndustry()).isEqualTo("핀테크");

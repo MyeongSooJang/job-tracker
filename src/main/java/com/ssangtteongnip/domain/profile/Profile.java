@@ -49,7 +49,7 @@ public class Profile {
         return info != null ? info : PersonalInfo.empty();
     }
 
-    public void update(String name, PersonalInfo info) {
+    public void reviseNameAndInfo(String name, PersonalInfo info) {
         this.user.changeName(name);
         this.info = info;
     }

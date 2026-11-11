@@ -92,7 +92,7 @@ class ProfileControllerTest {
 
     @Test
     void PUT_me_profile_인적_사항을_저장한다() throws Exception {
-        given(profileService.updateMyProfile(eq(1L), any())).willReturn(profileResponse(null));
+        given(profileService.reviseMyProfile(eq(1L), any())).willReturn(profileResponse(null));
 
         mockMvc.perform(put("/api/me/profile")
                         .header("Authorization", BEARER)
@@ -115,7 +115,7 @@ class ProfileControllerTest {
 
     @Test
     void PUT_me_profile_취업_준비_시작일을_저장한다() throws Exception {
-        given(profileService.updateMyProfile(eq(1L), any())).willReturn(profileResponse(null));
+        given(profileService.reviseMyProfile(eq(1L), any())).willReturn(profileResponse(null));
 
         mockMvc.perform(put("/api/me/profile")
                         .header("Authorization", BEARER)
@@ -141,7 +141,7 @@ class ProfileControllerTest {
 
     @Test
     void PUT_me_profile_취업_준비_시작일이_오늘이면_저장한다() throws Exception {
-        given(profileService.updateMyProfile(eq(1L), any())).willReturn(profileResponse(null));
+        given(profileService.reviseMyProfile(eq(1L), any())).willReturn(profileResponse(null));
 
         mockMvc.perform(put("/api/me/profile")
                         .header("Authorization", BEARER)
@@ -153,7 +153,7 @@ class ProfileControllerTest {
 
     @Test
     void PUT_me_profile_취업_준비_시작일을_생략해도_저장한다() throws Exception {
-        given(profileService.updateMyProfile(eq(1L), any())).willReturn(profileResponse(null));
+        given(profileService.reviseMyProfile(eq(1L), any())).willReturn(profileResponse(null));
 
         mockMvc.perform(put("/api/me/profile")
                         .header("Authorization", BEARER)

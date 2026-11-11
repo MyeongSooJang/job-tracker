@@ -21,8 +21,8 @@ public class ProfileController {
     }
 
     @PutMapping
-    public ProfileResponse updateMyProfile(@AuthenticationPrincipal Long userId,
+    public ProfileResponse reviseMyProfile(@AuthenticationPrincipal Long userId,
                                            @RequestBody @Valid ProfileRequest request) {
-        return profileService.updateMyProfile(userId, request);
+        return profileService.reviseMyProfile(userId, request);
     }
 }

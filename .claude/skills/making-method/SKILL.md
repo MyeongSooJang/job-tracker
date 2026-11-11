@@ -21,10 +21,11 @@ description: Use when creating, renaming, or changing a Java method or its signa
 | 나쁨 | 좋음 | 이유 |
 |---|---|---|
 | `ratingOf(companyId)` | `findCompanyRating(company)` | 명사형은 동작이 안 보이고, 무엇의 평점인지도 모호하다 |
-| `process`, `handle`, `doIt` | `advanceStatus`, `reflectToApplication` | 무엇을 처리하는지 알 수 없다 |
+| `process`, `handle`, `doIt` | `changeStatus`, `reflectToApplication` | 무엇을 처리하는지 알 수 없다 |
 
 - 조회 동사는 이 프로젝트 관례대로 **`find`**를 쓴다 (`search`, `fetch`, `get` 대신). `Optional`이 아니라 항상 값을 주는 조회라면 클래스 주석에 "없으면 어떤 값을 주는지" 적는다.
-- 판단은 `is/has/can`, 변경은 의도를 드러내는 동사(`changeMemo`, `advanceStatus`)를 쓴다. `setX`는 쓰지 않는다.
+- 판단은 `is/has/can`, 변경은 의도를 드러내는 동사(`changeMemo`, `changeStatus`)를 쓴다. `setX`는 쓰지 않는다.
+- **일상적인 단어를 쓴다.** `advance`, `proceed`, `commence`처럼 뜻을 한 번 더 해석해야 하는 단어 대신 `change`, `start`, `move`처럼 처음 보는 사람이 바로 이해하는 단어를 쓴다. 같은 동작을 가리키는 동사가 `advance`와 `move`로 갈라지지 않게 한 단어로 통일한다.
 
 ### 2. `of`/`from`처럼 무엇을 하는지 모호한 이름을 새로 만들지 않는다
 
@@ -33,7 +34,9 @@ description: Use when creating, renaming, or changing a Java method or its signa
 - 변환·결합처럼 **하는 일이 있다면** 그 일을 이름에 쓴다. 예: `CompanyResponse.of(company, rating)` 대신 `CompanyResponse.attachRating(company, rating)`.
 - 이미 있는 `of`/`from`은 요청 범위 밖이면 고치지 않는다. 새로 만들거나 그 메서드를 수정할 때만 바꾸고 한 줄로 고지한다.
 
-### 3. 이름이 대상을 말해야 한다
+### 3. 이름이 대상을 말해야 한다. 단, 인자가 말해 주는 정보는 반복하지 않는다
+
+- 인자가 말해 주는 정보를 이름에 되풀이하지 않는다. `changeStatusTo(next)`의 `To`는 `next`가 이미 말해 주므로 `changeStatus(next)`로 쓴다. `To`, `By` 같은 전치사는 인자 타입만으로 대상이 안 드러날 때(`findWrittenByCompanyId(Long)`)만 붙인다.
 
 - 인자가 `Long id`라서 무엇의 값인지 안 드러나면, **도메인 객체를 받거나 이름에 대상을 넣는다.** `ratingOf(Long id)`보다 `findCompanyRating(Company company)`가 낫다.
 - 도메인 객체를 받으면 호출부에서 `company.getId()`를 꺼낼 필요가 없어 Tell, Don't Ask에도 맞는다.
@@ -58,9 +61,29 @@ description: Use when creating, renaming, or changing a Java method or its signa
 - 한 줄 람다가 두 줄 이상이 되면 `private` 메서드로 빼서 이름을 붙이는 것도 방법이다.
 - 변수가 한 번만 쓰이고 이름이 새 정보를 주지 않으면(`result`, `temp`) 만들지 않는다.
 
-### 5. 한 메서드는 결과 하나만 결정한다
+### 5. 판단하는 메서드는 판단만, 바꾸는 메서드는 바꾸기만 한다
 
-이름에 "그리고"가 필요하면 메서드를 쪼갠다. 한 메서드가 조회도 하고 기본값도 정하고 변환도 하면 이름이 거짓말이 된다.
+한 메서드는 한 가지 목적만 수행한다. 이름에 "그리고"가 필요하면 메서드를 쪼갠다. 판단도 하고 변경도 하면 이름이 거짓말이 된다.
+
+| 목적 | 이름 | 하는 일 |
+|---|---|---|
+| 판단 | `canChangeStatus(next)` | true/false만 답한다. 상태를 바꾸지 않는다 |
+| 검사 | `validateStatusChange(next)` | 안 되면 예외를 던진다. 상태를 바꾸지 않는다 |
+| 변경 | `changeStatus(next)` | 상태만 바꾼다. 판단은 하지 않는다 |
+
+```java
+// 나쁨: 검사와 변경을 한 메서드가 함께 한다 (이름 moveTo에는 검사한다는 게 안 드러남)
+public void moveTo(ApplicationStatus next) { if (!status.canAdvanceTo(next)) throw ...; this.status = next; }
+
+// 좋음: 목적별로 나눠 호출부에서 순서대로 읽힌다
+public void accept() {
+    validateStatusChange(ACCEPTED);
+    changeStatus(ACCEPTED);
+}
+```
+
+- 조건이 안 맞을 때 **조용히 아무것도 안 하는 변경 메서드**를 만들지 않는다. 호출한 쪽이 바뀌었는지 알 수 없다. 불가능하면 예외를 던지거나, 판단 메서드를 따로 둔다.
+- 판단 메서드를 서비스에서 이어 부르면 서비스에 도메인 로직이 생긴다. 판단과 변경을 잇는 일은 도메인 메서드 안에서 한다.
 
 ## 완료 체크리스트
 
@@ -70,6 +93,9 @@ description: Use when creating, renaming, or changing a Java method or its signa
 - [ ] 인자가 `Long id`뿐이라 대상이 안 보이는 곳이 없다
 - [ ] 인자 안에 겹친 식이 없다
 - [ ] 이름이 실제 동작과 일치한다 (이름보다 많은 일을 하지 않는다)
+- [ ] 판단 메서드는 판단만, 변경 메서드는 변경만 한다 (조건 불충족 시 조용히 무시하지 않는다)
+- [ ] 이름에 인자가 이미 말해 주는 `To`/`By`가 붙어 있지 않다
+- [ ] `advance`처럼 한 번 더 해석해야 하는 단어가 없다
 - [ ] 기존 `of`/`from`·모호한 이름은 범위 밖이면 고치지 않고 보고만 했다
 
 ## 합리화 함정 — 이 생각이 들면 STOP

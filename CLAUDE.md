@@ -123,6 +123,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | `git commit`, `gh pr create` | `commit-and-pr-format` 스킬을 이 세션에서 실행했는가 | 스킬이 설치돼 있으면 차단, 없으면 알리기만 한다 |
 
 - **보안 리뷰는 커밋마다 유효하다.** 리뷰 뒤에 커밋이 하나라도 늘면(테스트·문서 커밋 포함) PR을 만들거나 머지하기 전에 `/security-review`를 다시 실행한다. 그래서 리뷰는 **마지막 커밋 뒤에** 돌린다. 위의 "인증·한도·중복 방지 코드는 PR 전에 `/code-review`(인증이면 `/security-review`)" 규칙과 함께 지킨다.
+- `/security-review` 직후 `mark-skill.cjs`가 "취약점이 없으면 묻지 말고 바로 push·PR, 있으면 멈추고 보고, 머지는 지시가 있을 때만"을 additionalContext로 상기시킨다. 훅은 리뷰 결과를 알 수 없어 강제가 아니라 안내다.
 - 스킬 실행 기록은 `mark-skill.cjs`(PostToolUse)가 `.claude/.state/`(git 제외)에 남긴다. 스킬을 **호출한** 사실만 기록하며, 리뷰 결과를 반영했는지는 확인하지 못한다.
 - 훅 동작 검증: `node --test .claude/hooks/guard-check.cjs` (임시 git 저장소에 스크립트를 복사해 실행한다). 훅을 고치면 함께 돌린다.
 - 같은 스크립트가 프론트엔드 저장소에도 있다(`guard.config.json`만 다르다). 한쪽을 고치면 다른 쪽도 같이 고친다.

@@ -3,6 +3,16 @@ name: Deploy
 on:
   push:
     branches: [main]
+    # 앱 이미지나 서버 배포 파일에 영향 없는 변경(문서, 스킬 등)은 배포하지 않는다.
+    paths:
+      - 'src/**'
+      - 'build.gradle'
+      - 'settings.gradle'
+      - 'gradle/**'
+      - 'gradlew'
+      - 'Dockerfile'
+      - 'deploy/**'
+      - '.github/workflows/deploy.yml'
 
 # 같은 서버에 배포가 겹치지 않도록 직렬화한다.
 concurrency:

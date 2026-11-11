@@ -26,7 +26,8 @@ public class ApplicationService {
     public Application register(Long userId, ApplicationRequest request) {
         Company company = companyService.findById(request.companyId());
         return applicationRepository.save(
-                Application.create(userId, company, request.position(), request.appliedDate())
+                Application.create(userId, company, request.position(), request.appliedDate(),
+                        request.jobSite())
         );
     }
 

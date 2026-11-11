@@ -64,6 +64,7 @@ erDiagram
         varchar position
         varchar status "ApplicationStatus"
         date applied_date
+        varchar job_site "JobSite, 선택"
         timestamp created_at
         timestamp updated_at
     }

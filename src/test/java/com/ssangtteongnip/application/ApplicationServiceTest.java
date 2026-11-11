@@ -7,6 +7,7 @@ import com.ssangtteongnip.application.service.dto.ApplicationStatusRequest;
 import com.ssangtteongnip.domain.application.Application;
 import com.ssangtteongnip.domain.application.ApplicationRepository;
 import com.ssangtteongnip.domain.application.ApplicationStatus;
+import com.ssangtteongnip.domain.application.JobSite;
 import com.ssangtteongnip.domain.company.Company;
 import com.ssangtteongnip.global.exception.ErrorCode;
 import org.junit.jupiter.api.Test;
@@ -46,11 +47,24 @@ class ApplicationServiceTest {
         given(applicationRepository.save(any(Application.class))).willAnswer(i -> i.getArgument(0));
 
         Application saved = applicationService.register(7L,
-                new ApplicationRequest(1L, "백엔드 개발자", LocalDate.of(2026, 11, 1)));
+                new ApplicationRequest(1L, "백엔드 개발자", LocalDate.of(2026, 11, 1), JobSite.SARAMIN));
 
         assertThat(saved.isOwnedBy(7L)).isTrue();
         assertThat(saved.getCompany()).isSameAs(company);
         assertThat(saved.getStatus()).isEqualTo(ApplicationStatus.RESUME_SUBMITTED);
+        assertThat(saved.getJobSite()).isEqualTo(JobSite.SARAMIN);
+    }
+
+    @Test
+    void 구직_사이트를_생략해도_지원_건을_등록할_수_있다() {
+        Company company = Company.create("카카오", "IT", "https://kakao.com");
+        given(companyService.findById(1L)).willReturn(company);
+        given(applicationRepository.save(any(Application.class))).willAnswer(i -> i.getArgument(0));
+
+        Application saved = applicationService.register(7L,
+                new ApplicationRequest(1L, "백엔드 개발자", LocalDate.of(2026, 11, 1), null));
+
+        assertThat(saved.getJobSite()).isNull();
     }
 
     @Test

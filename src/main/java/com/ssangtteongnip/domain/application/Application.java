@@ -41,6 +41,10 @@ public class Application {
 
     private LocalDate appliedDate;
 
+    // 기존 지원 건은 사이트를 몰라 null일 수 있다.
+    @Enumerated(EnumType.STRING)
+    private JobSite jobSite;
+
     @CreatedDate
     @Column(updatable = false)
     private LocalDateTime createdAt;
@@ -49,7 +53,13 @@ public class Application {
     private LocalDateTime updatedAt;
 
     public static Application create(Long userId, Company company, String position, LocalDate appliedDate) {
+        return create(userId, company, position, appliedDate, null);
+    }
+
+    public static Application create(Long userId, Company company, String position, LocalDate appliedDate,
+                                     JobSite jobSite) {
         Application application = new Application();
+        application.jobSite = jobSite;
         application.userId = userId;
         application.company = company;
         application.position = position;

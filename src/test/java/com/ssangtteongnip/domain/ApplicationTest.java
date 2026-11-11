@@ -8,6 +8,7 @@ import com.ssangtteongnip.global.exception.ErrorCode;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 import static com.ssangtteongnip.support.ErrorCodeAssertions.assertErrorCode;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -18,6 +19,7 @@ class ApplicationTest {
 
     private static final Long OWNER_ID = 1L;
     private static final Long OTHER_USER_ID = 2L;
+    private static final LocalDateTime PASSED_AT = LocalDateTime.of(2026, 11, 5, 10, 0);
 
     private Application applicationInResumeSubmitted() {
         Company company = Company.create("카카오", "IT", "https://kakao.com");
@@ -26,7 +28,7 @@ class ApplicationTest {
 
     private Application applicationInInterview() {
         Application app = applicationInResumeSubmitted();
-        app.advanceStatus(ApplicationStatus.INTERVIEW);
+        app.startInterview(PASSED_AT);
         return app;
     }
 
@@ -69,9 +71,83 @@ class ApplicationTest {
     void 서류_제출_상태의_지원은_면접으로_전이할_수_있다() {
         Application app = applicationInResumeSubmitted();
 
-        app.advanceStatus(ApplicationStatus.INTERVIEW);
+        app.startInterview(PASSED_AT);
 
         assertThat(app.getStatus()).isEqualTo(ApplicationStatus.INTERVIEW);
+    }
+
+    @Test
+    void 면접으로_전이하면_서류_통과_시점이_기록된다() {
+        Application app = applicationInResumeSubmitted();
+
+        app.startInterview(PASSED_AT);
+
+        assertThat(app.getDocumentPassedAt()).isEqualTo(PASSED_AT);
+        assertThat(app.isDocumentPassed()).isTrue();
+    }
+
+    @Test
+    void 새로_만든_지원은_서류_통과_전이다() {
+        assertThat(applicationInResumeSubmitted().isDocumentPassed()).isFalse();
+    }
+
+    @Test
+    void 면접_후_불합격이_되어도_서류_통과_기록은_유지된다() {
+        Application app = applicationInInterview();
+
+        app.advanceStatus(ApplicationStatus.REJECTED);
+
+        assertThat(app.isDocumentPassed()).isTrue();
+        assertThat(app.getDocumentPassedAt()).isEqualTo(PASSED_AT);
+    }
+
+    @Test
+    void 면접_후_합격해도_서류_통과_기록은_유지된다() {
+        Application app = applicationInInterview();
+
+        app.advanceStatus(ApplicationStatus.ACCEPTED);
+
+        assertThat(app.getDocumentPassedAt()).isEqualTo(PASSED_AT);
+    }
+
+    @Test
+    void 서류_단계에서_불합격하면_서류_통과로_기록되지_않는다() {
+        Application app = applicationInResumeSubmitted();
+
+        app.advanceStatus(ApplicationStatus.REJECTED);
+
+        assertThat(app.isDocumentPassed()).isFalse();
+        assertThat(app.getDocumentPassedAt()).isNull();
+    }
+
+    @Test
+    void 면접_일정이_또_잡혀도_최초_서류_통과_시점을_덮어쓰지_않는다() {
+        Application app = applicationInInterview();
+
+        app.startInterview(PASSED_AT.plusDays(3));
+
+        assertThat(app.getStatus()).isEqualTo(ApplicationStatus.INTERVIEW);
+        assertThat(app.getDocumentPassedAt()).isEqualTo(PASSED_AT);
+    }
+
+    @Test
+    void 이미_불합격한_지원에_면접_일정이_잡혀도_상태와_기록은_바뀌지_않는다() {
+        Application app = applicationInResumeSubmitted();
+        app.advanceStatus(ApplicationStatus.REJECTED);
+
+        app.startInterview(PASSED_AT);
+
+        assertThat(app.getStatus()).isEqualTo(ApplicationStatus.REJECTED);
+        assertThat(app.isDocumentPassed()).isFalse();
+    }
+
+    @Test
+    void 면접으로는_상태_전이로_직접_바꿀_수_없고_면접_일정을_등록해야_한다() {
+        Application app = applicationInResumeSubmitted();
+
+        assertErrorCode(() -> app.advanceStatus(ApplicationStatus.INTERVIEW), ErrorCode.INTERVIEW_SCHEDULE_REQUIRED);
+        assertThat(app.getStatus()).isEqualTo(ApplicationStatus.RESUME_SUBMITTED);
+        assertThat(app.isDocumentPassed()).isFalse();
     }
 
     @Test

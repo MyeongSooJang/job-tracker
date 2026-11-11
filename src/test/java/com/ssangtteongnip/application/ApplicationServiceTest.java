@@ -115,6 +115,7 @@ class ApplicationServiceTest {
     @Test
     void 면접으로는_직접_전환할_수_없고_면접_일정을_등록해야_한다() {
         Application app = application();
+        given(applicationRepository.findById(APPLICATION_ID)).willReturn(Optional.of(app));
 
         assertErrorCode(
                 () -> applicationService.advanceStatus(OWNER_ID, APPLICATION_ID, new ApplicationStatusRequest(ApplicationStatus.INTERVIEW)),

@@ -1,7 +1,6 @@
 package com.ssangtteongnip.application.service;
 
 import com.ssangtteongnip.domain.application.Application;
-import com.ssangtteongnip.domain.application.ApplicationStatus;
 import com.ssangtteongnip.domain.review.Review;
 import com.ssangtteongnip.domain.review.ReviewRepository;
 import com.ssangtteongnip.domain.schedule.Schedule;
@@ -15,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -26,6 +26,7 @@ public class ScheduleService {
     private final ScheduleRepository scheduleRepository;
     private final ApplicationService applicationService;
     private final ReviewRepository reviewRepository;
+    private final Clock clock;
 
     @Transactional
     public Schedule register(Long userId, ScheduleRequest request) {
@@ -34,9 +35,8 @@ public class ScheduleService {
                 Schedule.create(application, request.title(), request.scheduledAt(),
                         request.type(), request.address(), request.note())
         );
-        if (request.type() == ScheduleType.INTERVIEW
-                && application.getStatus() == ApplicationStatus.RESUME_SUBMITTED) {
-            application.advanceStatus(ApplicationStatus.INTERVIEW);
+        if (request.type() == ScheduleType.INTERVIEW) {
+            application.startInterview(LocalDateTime.now(clock));
         }
         if (request.type() == ScheduleType.INTERVIEW
                 && !reviewRepository.existsByApplicationId(application.getId())) {

@@ -144,7 +144,7 @@ class CompanyServiceTest {
     void 회사의_후기는_직무와_지원_결과를_담아_작성자_정보_없이_준다() {
         Company company = Company.create("카카오", "IT", "https://kakao.com");
         Application application = applicationOf(company);
-        application.advanceStatus(ApplicationStatus.INTERVIEW);
+        application.startInterview(java.time.LocalDateTime.of(2026, 11, 5, 10, 0));
         application.advanceStatus(ApplicationStatus.ACCEPTED);
         given(companyRepository.findById(1L)).willReturn(Optional.of(company));
         given(reviewRepository.findWrittenByCompanyId(1L))

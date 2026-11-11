@@ -110,7 +110,7 @@ class ApplicationControllerTest {
     @Test
     void PATCH_applications_status_상태를_전이한다() throws Exception {
         Application app = sampleApplication();
-        app.advanceStatus(ApplicationStatus.INTERVIEW);
+        app.startInterview(java.time.LocalDateTime.of(2026, 11, 5, 10, 0));
         given(applicationService.advanceStatus(eq(1L), eq(1L), any())).willReturn(app);
 
         mockMvc.perform(patch("/api/applications/1/status")
@@ -124,7 +124,7 @@ class ApplicationControllerTest {
     @Test
     void GET_applications_status로_면접_단계_지원_건만_조회한다() throws Exception {
         Application app = sampleApplication();
-        app.advanceStatus(ApplicationStatus.INTERVIEW);
+        app.startInterview(java.time.LocalDateTime.of(2026, 11, 5, 10, 0));
         given(applicationService.findByStatus(1L, ApplicationStatus.INTERVIEW)).willReturn(java.util.List.of(app));
 
         mockMvc.perform(get("/api/applications")

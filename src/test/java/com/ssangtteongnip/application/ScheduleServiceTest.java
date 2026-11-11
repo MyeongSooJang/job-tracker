@@ -13,14 +13,16 @@ import com.ssangtteongnip.domain.schedule.Schedule;
 import com.ssangtteongnip.domain.schedule.ScheduleRepository;
 import com.ssangtteongnip.domain.schedule.ScheduleType;
 import com.ssangtteongnip.global.exception.ErrorCode;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.Clock;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Optional;
 
 import static com.ssangtteongnip.support.ErrorCodeAssertions.assertErrorCode;
@@ -36,7 +38,16 @@ class ScheduleServiceTest {
     @Mock ScheduleRepository scheduleRepository;
     @Mock ApplicationService applicationService;
     @Mock ReviewRepository reviewRepository;
-    @InjectMocks ScheduleService scheduleService;
+    ScheduleService scheduleService;
+
+    private static final ZoneId SEOUL = ZoneId.of("Asia/Seoul");
+    private static final LocalDateTime NOW = LocalDateTime.of(2026, 11, 5, 10, 0);
+
+    @BeforeEach
+    void setUp() {
+        Clock clock = Clock.fixed(NOW.atZone(SEOUL).toInstant(), SEOUL);
+        scheduleService = new ScheduleService(scheduleRepository, applicationService, reviewRepository, clock);
+    }
 
     private ScheduleRequest request(ScheduleType type) {
         return new ScheduleRequest(1L, "1차 면접", LocalDateTime.now(), type, "판교", "");
@@ -70,6 +81,47 @@ class ScheduleServiceTest {
         scheduleService.register(1L, request(ScheduleType.INTERVIEW));
 
         assertThat(app.getStatus()).isEqualTo(ApplicationStatus.INTERVIEW);
+    }
+
+    @Test
+    void register_면접_일정이_생성되면_현재_시각이_서류_통과_시점으로_기록된다() {
+        Company company = Company.create("카카오", "IT", "https://kakao.com");
+        Application app = Application.create(1L, company, "백엔드 개발자", LocalDate.now());
+        given(applicationService.findById(1L, 1L)).willReturn(app);
+        given(scheduleRepository.save(any(Schedule.class))).willAnswer(i -> i.getArgument(0));
+        given(reviewRepository.existsByApplicationId(any())).willReturn(false);
+
+        scheduleService.register(1L, request(ScheduleType.INTERVIEW));
+
+        assertThat(app.getDocumentPassedAt()).isEqualTo(NOW);
+    }
+
+    @Test
+    void register_면접_일정을_여러_개_등록해도_최초_서류_통과_시점이_유지된다() {
+        Company company = Company.create("카카오", "IT", "https://kakao.com");
+        Application app = Application.create(1L, company, "백엔드 개발자", LocalDate.now());
+        given(applicationService.findById(1L, 1L)).willReturn(app);
+        given(scheduleRepository.save(any(Schedule.class))).willAnswer(i -> i.getArgument(0));
+        given(reviewRepository.existsByApplicationId(any())).willReturn(false);
+        scheduleService.register(1L, request(ScheduleType.INTERVIEW));
+        Clock later = Clock.fixed(NOW.plusDays(7).atZone(SEOUL).toInstant(), SEOUL);
+        ScheduleService laterService = new ScheduleService(scheduleRepository, applicationService, reviewRepository, later);
+
+        laterService.register(1L, request(ScheduleType.INTERVIEW));
+
+        assertThat(app.getDocumentPassedAt()).isEqualTo(NOW);
+    }
+
+    @Test
+    void register_면접이_아닌_일정은_서류_통과로_기록되지_않는다() {
+        Company company = Company.create("카카오", "IT", "https://kakao.com");
+        Application app = Application.create(1L, company, "백엔드 개발자", LocalDate.now());
+        given(applicationService.findById(1L, 1L)).willReturn(app);
+        given(scheduleRepository.save(any(Schedule.class))).willAnswer(i -> i.getArgument(0));
+
+        scheduleService.register(1L, request(ScheduleType.TASK));
+
+        assertThat(app.isDocumentPassed()).isFalse();
     }
 
     @Test

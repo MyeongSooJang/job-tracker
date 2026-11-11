@@ -1,5 +1,6 @@
 package com.ssangtteongnip.application.service;
 
+import com.ssangtteongnip.application.service.dto.ApplicationJobSiteRequest;
 import com.ssangtteongnip.application.service.dto.ApplicationRequest;
 import com.ssangtteongnip.application.service.dto.ApplicationStatusRequest;
 import com.ssangtteongnip.domain.application.Application;
@@ -26,7 +27,8 @@ public class ApplicationService {
     public Application register(Long userId, ApplicationRequest request) {
         Company company = companyService.findById(request.companyId());
         return applicationRepository.save(
-                Application.create(userId, company, request.position(), request.appliedDate())
+                Application.create(userId, company, request.position(), request.appliedDate(),
+                        request.jobSite())
         );
     }
 
@@ -42,6 +44,13 @@ public class ApplicationService {
         Application application = applicationRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.APPLICATION_NOT_FOUND));
         application.verifyOwner(userId);
+        return application;
+    }
+
+    @Transactional
+    public Application changeJobSite(Long userId, Long id, ApplicationJobSiteRequest request) {
+        Application application = findById(userId, id);
+        application.changeJobSite(request.jobSite());
         return application;
     }
 

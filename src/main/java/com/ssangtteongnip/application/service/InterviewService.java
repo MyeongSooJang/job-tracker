@@ -12,6 +12,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -21,6 +23,7 @@ public class InterviewService {
 
     private final InterviewRepository interviewRepository;
     private final ApplicationService applicationService;
+    private final Clock clock;
 
     @Transactional
     public Interview register(Long userId, Long applicationId, InterviewRequest request) {
@@ -28,6 +31,7 @@ public class InterviewService {
         Interview interview = Interview.create(application, request.round(), request.interviewDate(),
                 request.location(), request.note());
         interview.evaluate(request.score());
+        application.startInterview(LocalDateTime.now(clock));
         return interviewRepository.save(interview);
     }
 

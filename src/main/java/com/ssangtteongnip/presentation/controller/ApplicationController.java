@@ -1,8 +1,10 @@
 package com.ssangtteongnip.presentation.controller;
 
 import com.ssangtteongnip.application.service.ApplicationService;
+import com.ssangtteongnip.application.service.dto.ApplicationDeadlineRequest;
 import com.ssangtteongnip.application.service.dto.ApplicationJobSiteRequest;
 import com.ssangtteongnip.application.service.dto.ApplicationRequest;
+import com.ssangtteongnip.application.service.dto.ApplicationResumeViewRequest;
 import com.ssangtteongnip.application.service.dto.ApplicationStatusRequest;
 import com.ssangtteongnip.application.service.dto.JobSiteStatisticsResponse;
 import com.ssangtteongnip.domain.application.Application;
@@ -52,6 +54,20 @@ public class ApplicationController {
                                      @PathVariable Long id,
                                      @RequestBody @Valid ApplicationJobSiteRequest request) {
         return applicationService.changeJobSite(userId, id, request);
+    }
+
+    @PatchMapping("/{id}/deadline")
+    public Application changeDeadline(@AuthenticationPrincipal Long userId,
+                                      @PathVariable Long id,
+                                      @RequestBody @Valid ApplicationDeadlineRequest request) {
+        return applicationService.changeDeadline(userId, id, request);
+    }
+
+    @PatchMapping("/{id}/resume-view")
+    public Application changeResumeView(@AuthenticationPrincipal Long userId,
+                                        @PathVariable Long id,
+                                        @RequestBody @Valid ApplicationResumeViewRequest request) {
+        return applicationService.changeResumeView(userId, id, request);
     }
 
     @PatchMapping("/{id}/status")

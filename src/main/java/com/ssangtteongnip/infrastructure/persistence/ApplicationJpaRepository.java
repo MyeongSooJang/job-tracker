@@ -25,4 +25,12 @@ public interface ApplicationJpaRepository extends JpaRepository<Application, Lon
             order by count(a) desc, a.jobSite asc
             """)
     List<JobSiteStatistics> summarizeByJobSite(@Param("userId") Long userId);
+
+    @Override
+    @Query("""
+            select a from Application a
+            where a.status = com.ssangtteongnip.domain.application.ApplicationStatus.RESUME_SUBMITTED
+              and a.deadline is not null
+            """)
+    List<Application> findPendingWithDeadline();
 }

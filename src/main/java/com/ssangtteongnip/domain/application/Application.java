@@ -45,6 +45,17 @@ public class Application {
     @Enumerated(EnumType.STRING)
     private JobSite jobSite;
 
+    // 공고 마감일. 모르면 null이고, null이면 자동 불합격 대상이 아니다.
+    private LocalDate deadline;
+
+    // 기존 지원 건은 컬럼이 추가될 때 NOT_VIEWED로 채워진다.
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, columnDefinition = "varchar(255) not null default 'NOT_VIEWED'")
+    private ResumeView resumeView;
+
+    // 마감일 + 1달이 지나 자동으로 불합격이 된 시점. 직접 불합격 처리했거나 불합격이 아니면 null이다.
+    private LocalDateTime autoRejectedAt;
+
     // 서류 통과(면접 일정이나 면접 기록이 처음 등록된) 시점. 이후 불합격이 되어도 유지되며, 서류 탈락이면 null이다.
     private LocalDateTime documentPassedAt;
 
@@ -61,6 +72,11 @@ public class Application {
 
     public static Application create(Long userId, Company company, String position, LocalDate appliedDate,
                                      JobSite jobSite) {
+        return create(userId, company, position, appliedDate, jobSite, null, ResumeView.NOT_VIEWED);
+    }
+
+    public static Application create(Long userId, Company company, String position, LocalDate appliedDate,
+                                     JobSite jobSite, LocalDate deadline, ResumeView resumeView) {
         Application application = new Application();
         application.jobSite = jobSite;
         application.userId = userId;
@@ -68,6 +84,8 @@ public class Application {
         application.position = position;
         application.status = ApplicationStatus.RESUME_SUBMITTED;
         application.appliedDate = appliedDate;
+        application.deadline = deadline;
+        application.resumeView = Objects.requireNonNull(resumeView);
         return application;
     }
 
@@ -83,6 +101,14 @@ public class Application {
 
     public void changeJobSite(JobSite jobSite) {
         this.jobSite = Objects.requireNonNull(jobSite);
+    }
+
+    public void changeDeadline(LocalDate deadline) {
+        this.deadline = Objects.requireNonNull(deadline);
+    }
+
+    public void changeResumeView(ResumeView resumeView) {
+        this.resumeView = Objects.requireNonNull(resumeView);
     }
 
     public boolean isDocumentPassed() {
@@ -105,6 +131,23 @@ public class Application {
     // 불합격. 서류 탈락(서류 제출 상태)과 면접 후 불합격(면접 상태) 모두 가능하다.
     public void reject() {
         moveTo(ApplicationStatus.REJECTED);
+    }
+
+    // 서류 제출 상태로 마감일의 한 달 뒤 날짜가 지난 지원을 자동 불합격으로 바꾼다.
+    // 바꿨으면 true, 대상이 아니면 아무것도 바꾸지 않고 false를 돌려준다.
+    public boolean rejectIfDeadlineExpired(LocalDateTime now) {
+        if (!isDeadlineExpired(now.toLocalDate())) {
+            return false;
+        }
+        moveTo(ApplicationStatus.REJECTED);
+        this.autoRejectedAt = now;
+        return true;
+    }
+
+    private boolean isDeadlineExpired(LocalDate today) {
+        return status == ApplicationStatus.RESUME_SUBMITTED
+                && deadline != null
+                && today.isAfter(deadline.plusMonths(1));
     }
 
     private void moveTo(ApplicationStatus next) {

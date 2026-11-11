@@ -5,6 +5,8 @@ import com.ssangtteongnip.application.service.CompanyService;
 import com.ssangtteongnip.application.service.dto.ApplicationJobSiteRequest;
 import com.ssangtteongnip.application.service.dto.ApplicationRequest;
 import com.ssangtteongnip.application.service.dto.ApplicationStatusRequest;
+import com.ssangtteongnip.application.service.dto.JobSiteStatisticsResponse;
+import com.ssangtteongnip.domain.application.JobSiteStatistics;
 import com.ssangtteongnip.domain.application.Application;
 import com.ssangtteongnip.domain.application.ApplicationRepository;
 import com.ssangtteongnip.domain.application.ApplicationStatus;
@@ -18,6 +20,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 
 import static com.ssangtteongnip.support.ErrorCodeAssertions.assertErrorCode;
@@ -100,6 +103,19 @@ class ApplicationServiceTest {
         given(applicationRepository.findById(APPLICATION_ID)).willReturn(Optional.of(application()));
 
         assertErrorCode(() -> applicationService.findById(OTHER_USER_ID, APPLICATION_ID), ErrorCode.APPLICATION_NOT_FOUND);
+    }
+
+    @Test
+    void 사이트별_집계는_서류_통과율을_계산해_응답한다() {
+        given(applicationRepository.summarizeByJobSite(OWNER_ID)).willReturn(List.of(
+                new JobSiteStatistics(JobSite.SARAMIN, 10, 3),
+                new JobSiteStatistics(JobSite.WANTED, 2, 0)));
+
+        List<JobSiteStatisticsResponse> responses = applicationService.summarizeByJobSite(OWNER_ID);
+
+        assertThat(responses).containsExactly(
+                new JobSiteStatisticsResponse(JobSite.SARAMIN, 10, 3, 0.3),
+                new JobSiteStatisticsResponse(JobSite.WANTED, 2, 0, 0.0));
     }
 
     @Test

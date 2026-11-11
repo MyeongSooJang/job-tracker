@@ -3,6 +3,7 @@ package com.ssangtteongnip.application.service;
 import com.ssangtteongnip.application.service.dto.ApplicationJobSiteRequest;
 import com.ssangtteongnip.application.service.dto.ApplicationRequest;
 import com.ssangtteongnip.application.service.dto.ApplicationStatusRequest;
+import com.ssangtteongnip.application.service.dto.JobSiteStatisticsResponse;
 import com.ssangtteongnip.domain.application.Application;
 import com.ssangtteongnip.domain.application.ApplicationRepository;
 import com.ssangtteongnip.domain.application.ApplicationStatus;
@@ -38,6 +39,12 @@ public class ApplicationService {
 
     public List<Application> findByStatus(Long userId, ApplicationStatus status) {
         return applicationRepository.findByUserIdAndStatus(userId, status);
+    }
+
+    public List<JobSiteStatisticsResponse> summarizeByJobSite(Long userId) {
+        return applicationRepository.summarizeByJobSite(userId).stream()
+                .map(JobSiteStatisticsResponse::from)
+                .toList();
     }
 
     public Application findById(Long userId, Long id) {

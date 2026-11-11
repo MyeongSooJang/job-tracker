@@ -2,6 +2,7 @@ package com.ssangtteongnip.presentation;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ssangtteongnip.application.service.ApplicationService;
+import com.ssangtteongnip.application.service.dto.JobSiteStatisticsResponse;
 import com.ssangtteongnip.domain.application.Application;
 import com.ssangtteongnip.domain.application.ApplicationStatus;
 import com.ssangtteongnip.domain.application.JobSite;
@@ -174,6 +175,37 @@ class ApplicationControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.position").value("백엔드 개발자"))
                 .andExpect(jsonPath("$.status").value("RESUME_SUBMITTED"));
+    }
+
+    @Test
+    void GET_applications_stats_job_site_사이트별_서류_통과율을_반환한다() throws Exception {
+        given(applicationService.summarizeByJobSite(1L)).willReturn(java.util.List.of(
+                new JobSiteStatisticsResponse(JobSite.SARAMIN, 10, 3, 0.3)));
+
+        mockMvc.perform(get("/api/applications/stats/job-site").header("Authorization", BEARER))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].jobSite").value("SARAMIN"))
+                .andExpect(jsonPath("$[0].applicationCount").value(10))
+                .andExpect(jsonPath("$[0].documentPassedCount").value(3))
+                .andExpect(jsonPath("$[0].documentPassRate").value(0.3));
+    }
+
+    @Test
+    void 토큰이_없으면_사이트별_집계는_401을_반환한다() throws Exception {
+        mockMvc.perform(get("/api/applications/stats/job-site"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void 지원_건_응답에_서류_통과_시점이_담긴다() throws Exception {
+        Application app = sampleApplication();
+        app.startInterview(java.time.LocalDateTime.of(2026, 11, 5, 10, 0));
+        given(applicationService.findById(1L, 1L)).willReturn(app);
+
+        mockMvc.perform(get("/api/applications/1").header("Authorization", BEARER))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.documentPassed").value(true))
+                .andExpect(jsonPath("$.documentPassedAt").value("2026-11-05T10:00:00"));
     }
 
     @Test

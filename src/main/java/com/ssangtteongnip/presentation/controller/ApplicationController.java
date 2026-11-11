@@ -4,6 +4,7 @@ import com.ssangtteongnip.application.service.ApplicationService;
 import com.ssangtteongnip.application.service.dto.ApplicationJobSiteRequest;
 import com.ssangtteongnip.application.service.dto.ApplicationRequest;
 import com.ssangtteongnip.application.service.dto.ApplicationStatusRequest;
+import com.ssangtteongnip.application.service.dto.JobSiteStatisticsResponse;
 import com.ssangtteongnip.domain.application.Application;
 import com.ssangtteongnip.domain.application.ApplicationStatus;
 import jakarta.validation.Valid;
@@ -34,6 +35,11 @@ public class ApplicationController {
         return status == null
                 ? applicationService.findAll(userId)
                 : applicationService.findByStatus(userId, status);
+    }
+
+    @GetMapping("/stats/job-site")
+    public List<JobSiteStatisticsResponse> summarizeByJobSite(@AuthenticationPrincipal Long userId) {
+        return applicationService.summarizeByJobSite(userId);
     }
 
     @GetMapping("/{id}")

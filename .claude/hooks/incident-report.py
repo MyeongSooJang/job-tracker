@@ -19,6 +19,9 @@ from datetime import date
 from html import escape
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from scope import in_project  # noqa: E402
+
 INCIDENT_DIR = "docs/incidents"
 FIELDS = ("원인", "영향", "놓친 이유", "재발 방지")
 CORE_FILE_LABEL = "핵심 파일"
@@ -250,6 +253,8 @@ def write_report(subject: str, fields: dict, files: list, meta: dict, report_dat
 
 def run_hook() -> None:
     event = json.load(sys.stdin)
+    if not in_project(event):
+        return
     command = event.get("tool_input", {}).get("command", "")
     merging = subprocess.run(["git", "rev-parse", "-q", "--verify", "MERGE_HEAD"], capture_output=True).returncode == 0
     message = None if merging or not COMMIT_RE.search(command) else extract_message(command)

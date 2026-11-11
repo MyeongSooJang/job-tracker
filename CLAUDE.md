@@ -127,4 +127,5 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - 훅 동작 검증: `node --test .claude/hooks/guard-check.cjs` (임시 git 저장소에 스크립트를 복사해 실행한다). 훅을 고치면 함께 돌린다.
 - 같은 스크립트가 프론트엔드 저장소에도 있다(`guard.config.json`만 다르다). 한쪽을 고치면 다른 쪽도 같이 고친다.
 - 훅은 명령 문자열에서 heredoc·따옴표 속 글을 제외하고 판단하며, `cd 경로 &&`로 다른 저장소에서 실행하는 명령에는 적용하지 않는다. 사용자가 직접 입력하는 `! 명령`은 훅을 거치지 않는다.
+- 훅은 세션을 연 저장소의 설정이 `/add-dir`로 추가한 다른 저장소(프론트엔드) 작업에도 실행된다. 파이썬 훅(`erd-guard.py`, `incident-report.py`)은 `scope.py`로 작업 대상이 이 저장소 밖이면 건너뛴다. 훅 명령은 상대 경로가 아니라 `$CLAUDE_PROJECT_DIR`로 쓴다.
 - 새 훅 설정은 이미 열려 있는 세션에서는 `/hooks`를 한 번 열거나 세션을 다시 시작해야 적용될 수 있다.

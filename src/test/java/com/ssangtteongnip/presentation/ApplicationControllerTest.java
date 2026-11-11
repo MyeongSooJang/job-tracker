@@ -57,9 +57,21 @@ class ApplicationControllerTest {
                         .header("Authorization", BEARER)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
-                                Map.of("companyId", 1, "position", "백엔드 개발자", "appliedDate", LocalDate.now().toString()))))
+                                Map.of("companyId", 1, "position", "백엔드 개발자", "appliedDate", LocalDate.now().toString(),
+                                        "jobSite", "OTHER"))))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.status").value("RESUME_SUBMITTED"));
+    }
+
+    @Test
+    void 구직_사이트가_없으면_지원_건_등록은_400을_반환한다() throws Exception {
+        mockMvc.perform(post("/api/applications")
+                        .header("Authorization", BEARER)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(
+                                Map.of("companyId", 1, "position", "백엔드 개발자", "appliedDate", LocalDate.now().toString()))))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
     }
 
     @Test

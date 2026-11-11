@@ -10,5 +10,5 @@ public record ApplicationRequest(
         @NotNull Long companyId,
         @NotBlank String position,
         @NotNull LocalDate appliedDate,
-        JobSite jobSite
+        @NotNull JobSite jobSite
 ) {}

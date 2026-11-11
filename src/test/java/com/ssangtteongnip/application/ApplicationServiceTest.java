@@ -56,18 +56,6 @@ class ApplicationServiceTest {
     }
 
     @Test
-    void 구직_사이트를_생략해도_지원_건을_등록할_수_있다() {
-        Company company = Company.create("카카오", "IT", "https://kakao.com");
-        given(companyService.findById(1L)).willReturn(company);
-        given(applicationRepository.save(any(Application.class))).willAnswer(i -> i.getArgument(0));
-
-        Application saved = applicationService.register(7L,
-                new ApplicationRequest(1L, "백엔드 개발자", LocalDate.of(2026, 11, 1), null));
-
-        assertThat(saved.getJobSite()).isNull();
-    }
-
-    @Test
     void 소유자는_자신의_지원_건을_조회할_수_있다() {
         Application app = application();
         given(applicationRepository.findById(APPLICATION_ID)).willReturn(Optional.of(app));

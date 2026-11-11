@@ -4,7 +4,7 @@ import com.ssangtteongnip.domain.application.Application;
 import com.ssangtteongnip.domain.application.ApplicationRepository;
 import com.ssangtteongnip.domain.company.Company;
 import com.ssangtteongnip.domain.company.CompanyRepository;
-import com.ssangtteongnip.domain.review.CompanyReviewSummary;
+import com.ssangtteongnip.domain.review.CompanyReviewRating;
 import com.ssangtteongnip.domain.review.Review;
 import com.ssangtteongnip.domain.review.ReviewRepository;
 import com.ssangtteongnip.global.config.JpaConfig;
@@ -80,38 +80,38 @@ class CompanyReviewRepositoryTest {
     }
 
     @Test
-    void 회사의_후기_요약은_작성된_후기의_개수와_평균_평점이다() {
+    void 회사의_후기_평점은_작성된_후기의_개수와_평균_평점이다() {
         writtenReview(kakao, 1L, "후기1", 5);
         writtenReview(kakao, 2L, "후기2", 4);
         unwrittenReview(kakao, 3L);
         flushAndClear();
 
-        CompanyReviewSummary summary = reviewRepository.summarizeByCompanyId(kakao.getId()).orElseThrow();
+        CompanyReviewRating rating = reviewRepository.calculateRatingByCompanyId(kakao.getId()).orElseThrow();
 
-        assertThat(summary.companyId()).isEqualTo(kakao.getId());
-        assertThat(summary.reviewCount()).isEqualTo(2);
-        assertThat(summary.averageRating()).isEqualTo(4.5);
+        assertThat(rating.companyId()).isEqualTo(kakao.getId());
+        assertThat(rating.reviewCount()).isEqualTo(2);
+        assertThat(rating.averageRating()).isEqualTo(4.5);
     }
 
     @Test
-    void 작성된_후기가_없는_회사는_요약이_없다() {
+    void 작성된_후기가_없는_회사는_평점이_없다() {
         unwrittenReview(kakao, 1L);
         flushAndClear();
 
-        assertThat(reviewRepository.summarizeByCompanyId(kakao.getId())).isEmpty();
-        assertThat(reviewRepository.summarizeByCompanyId(toss.getId())).isEmpty();
+        assertThat(reviewRepository.calculateRatingByCompanyId(kakao.getId())).isEmpty();
+        assertThat(reviewRepository.calculateRatingByCompanyId(toss.getId())).isEmpty();
     }
 
     @Test
-    void 회사별_후기_요약을_한번에_조회한다() {
+    void 회사별_후기_평점을_한번에_조회한다() {
         writtenReview(kakao, 1L, "후기1", 5);
         writtenReview(kakao, 2L, "후기2", 3);
         writtenReview(naver, 3L, "후기3", 2);
         flushAndClear();
 
-        assertThat(reviewRepository.summarizeByCompany())
-                .extracting(CompanyReviewSummary::companyId, CompanyReviewSummary::reviewCount,
-                        CompanyReviewSummary::averageRating)
+        assertThat(reviewRepository.calculateRatingByCompany())
+                .extracting(CompanyReviewRating::companyId, CompanyReviewRating::reviewCount,
+                        CompanyReviewRating::averageRating)
                 .containsExactlyInAnyOrder(
                         tuple(kakao.getId(), 2L, 4.0),
                         tuple(naver.getId(), 1L, 2.0));

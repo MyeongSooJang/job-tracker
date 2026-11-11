@@ -1,6 +1,6 @@
 package com.ssangtteongnip.infrastructure.persistence;
 
-import com.ssangtteongnip.domain.review.CompanyReviewSummary;
+import com.ssangtteongnip.domain.review.CompanyReviewRating;
 import com.ssangtteongnip.domain.review.Review;
 import com.ssangtteongnip.domain.review.ReviewRepository;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -23,18 +23,18 @@ public interface ReviewJpaRepository extends JpaRepository<Review, Long>, Review
     List<Review> findWrittenByCompanyId(@Param("companyId") Long companyId);
 
     @Query("""
-            select new com.ssangtteongnip.domain.review.CompanyReviewSummary(a.company.id, count(r), avg(r.rating))
+            select new com.ssangtteongnip.domain.review.CompanyReviewRating(a.company.id, count(r), avg(r.rating))
             from Review r join r.application a
             where r.rating is not null
             group by a.company.id
             """)
-    List<CompanyReviewSummary> summarizeByCompany();
+    List<CompanyReviewRating> calculateRatingByCompany();
 
     @Query("""
-            select new com.ssangtteongnip.domain.review.CompanyReviewSummary(a.company.id, count(r), avg(r.rating))
+            select new com.ssangtteongnip.domain.review.CompanyReviewRating(a.company.id, count(r), avg(r.rating))
             from Review r join r.application a
             where a.company.id = :companyId and r.rating is not null
             group by a.company.id
             """)
-    Optional<CompanyReviewSummary> summarizeByCompanyId(@Param("companyId") Long companyId);
+    Optional<CompanyReviewRating> calculateRatingByCompanyId(@Param("companyId") Long companyId);
 }

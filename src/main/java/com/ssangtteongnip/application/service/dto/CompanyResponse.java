@@ -1,7 +1,7 @@
 package com.ssangtteongnip.application.service.dto;
 
 import com.ssangtteongnip.domain.company.Company;
-import com.ssangtteongnip.domain.review.CompanyReviewSummary;
+import com.ssangtteongnip.domain.review.CompanyReviewRating;
 
 import java.time.LocalDateTime;
 
@@ -14,14 +14,14 @@ public record CompanyResponse(
         long reviewCount,
         Double averageRating) {
 
-    public static CompanyResponse of(Company company, CompanyReviewSummary summary) {
+    public static CompanyResponse attachRating(Company company, CompanyReviewRating rating) {
         return new CompanyResponse(
                 company.getId(),
                 company.getName(),
                 company.getIndustry(),
                 company.getWebsite(),
                 company.getCreatedAt(),
-                summary.reviewCount(),
-                summary.averageRating());
+                rating.reviewCount(),
+                rating.averageRating());
     }
 }

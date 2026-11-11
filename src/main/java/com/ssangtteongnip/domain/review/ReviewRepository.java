@@ -11,6 +11,6 @@ public interface ReviewRepository {
 
     // 작성된(평점이 있는) 후기만, 최신순
     List<Review> findWrittenByCompanyId(Long companyId);
-    List<CompanyReviewSummary> summarizeByCompany();
-    Optional<CompanyReviewSummary> summarizeByCompanyId(Long companyId);
+    List<CompanyReviewRating> calculateRatingByCompany();
+    Optional<CompanyReviewRating> calculateRatingByCompanyId(Long companyId);
 }

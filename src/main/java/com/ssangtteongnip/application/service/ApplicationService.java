@@ -62,9 +62,9 @@ public class ApplicationService {
     }
 
     @Transactional
-    public Application advanceStatus(Long userId, Long id, ApplicationStatusRequest request) {
+    public Application decideResult(Long userId, Long id, ApplicationStatusRequest request) {
         Application application = findById(userId, id);
-        application.advanceStatus(request.status());
+        request.status().applyTo(application);
         return application;
     }
 }

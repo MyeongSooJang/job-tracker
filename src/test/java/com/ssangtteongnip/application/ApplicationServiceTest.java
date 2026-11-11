@@ -123,7 +123,7 @@ class ApplicationServiceTest {
         Application app = application();
         given(applicationRepository.findById(APPLICATION_ID)).willReturn(Optional.of(app));
 
-        applicationService.advanceStatus(OWNER_ID, APPLICATION_ID, new ApplicationStatusRequest(ApplicationStatus.REJECTED));
+        applicationService.decideResult(OWNER_ID, APPLICATION_ID, new ApplicationStatusRequest(ApplicationStatus.REJECTED));
 
         assertThat(app.getStatus()).isEqualTo(ApplicationStatus.REJECTED);
     }
@@ -134,7 +134,7 @@ class ApplicationServiceTest {
         given(applicationRepository.findById(APPLICATION_ID)).willReturn(Optional.of(app));
 
         assertErrorCode(
-                () -> applicationService.advanceStatus(OWNER_ID, APPLICATION_ID, new ApplicationStatusRequest(ApplicationStatus.INTERVIEW)),
+                () -> applicationService.decideResult(OWNER_ID, APPLICATION_ID, new ApplicationStatusRequest(ApplicationStatus.INTERVIEW)),
                 ErrorCode.INTERVIEW_SCHEDULE_REQUIRED);
         assertThat(app.getStatus()).isEqualTo(ApplicationStatus.RESUME_SUBMITTED);
     }
@@ -145,7 +145,7 @@ class ApplicationServiceTest {
         given(applicationRepository.findById(APPLICATION_ID)).willReturn(Optional.of(app));
 
         assertErrorCode(
-                () -> applicationService.advanceStatus(OTHER_USER_ID, APPLICATION_ID, new ApplicationStatusRequest(ApplicationStatus.REJECTED)),
+                () -> applicationService.decideResult(OTHER_USER_ID, APPLICATION_ID, new ApplicationStatusRequest(ApplicationStatus.REJECTED)),
                 ErrorCode.APPLICATION_NOT_FOUND);
         assertThat(app.getStatus()).isEqualTo(ApplicationStatus.RESUME_SUBMITTED);
     }

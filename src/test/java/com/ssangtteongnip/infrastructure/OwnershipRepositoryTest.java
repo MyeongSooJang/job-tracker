@@ -99,10 +99,10 @@ class OwnershipRepositoryTest {
         saveApplication(STATS_OWNER, JobSite.JOBKOREA, false);
         Company company = companyRepository.findAll().get(0);
         Application rejectedAfterDocument = Application.create(STATS_OWNER, company, "백엔드 개발자", LocalDate.now(), JobSite.JOBKOREA);
-        rejectedAfterDocument.advanceStatus(ApplicationStatus.REJECTED);
+        rejectedAfterDocument.reject();
         Application rejectedAfterInterview = Application.create(STATS_OWNER, company, "백엔드 개발자", LocalDate.now(), JobSite.JOBKOREA);
         rejectedAfterInterview.startInterview(scheduledAt);
-        rejectedAfterInterview.advanceStatus(ApplicationStatus.REJECTED);
+        rejectedAfterInterview.reject();
         applicationRepository.save(rejectedAfterDocument);
         applicationRepository.save(rejectedAfterInterview);
         em.flush();

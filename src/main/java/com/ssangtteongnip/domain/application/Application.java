@@ -97,10 +97,17 @@ public class Application {
         }
     }
 
-    public void advanceStatus(ApplicationStatus next) {
-        if (next == ApplicationStatus.INTERVIEW) {
-            throw new BusinessException(ErrorCode.INTERVIEW_SCHEDULE_REQUIRED);
-        }
+    // 최종 합격. 면접 중인 지원만 합격할 수 있다.
+    public void accept() {
+        moveTo(ApplicationStatus.ACCEPTED);
+    }
+
+    // 불합격. 서류 탈락(서류 제출 상태)과 면접 후 불합격(면접 상태) 모두 가능하다.
+    public void reject() {
+        moveTo(ApplicationStatus.REJECTED);
+    }
+
+    private void moveTo(ApplicationStatus next) {
         if (!this.status.canAdvanceTo(next)) {
             throw new BusinessException(ErrorCode.INVALID_STATUS_TRANSITION);
         }

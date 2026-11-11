@@ -145,7 +145,7 @@ class CompanyServiceTest {
         Company company = Company.create("카카오", "IT", "https://kakao.com");
         Application application = applicationOf(company);
         application.startInterview(java.time.LocalDateTime.of(2026, 11, 5, 10, 0));
-        application.advanceStatus(ApplicationStatus.ACCEPTED);
+        application.accept();
         given(companyRepository.findById(1L)).willReturn(Optional.of(company));
         given(reviewRepository.findWrittenByCompanyId(1L))
                 .willReturn(List.of(writtenReview(application, "면접관이 친절했어요", 5)));

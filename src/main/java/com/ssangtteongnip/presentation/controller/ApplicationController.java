@@ -55,9 +55,9 @@ public class ApplicationController {
     }
 
     @PatchMapping("/{id}/status")
-    public Application advanceStatus(@AuthenticationPrincipal Long userId,
-                                     @PathVariable Long id,
-                                     @RequestBody @Valid ApplicationStatusRequest request) {
-        return applicationService.advanceStatus(userId, id, request);
+    public Application decideResult(@AuthenticationPrincipal Long userId,
+                                    @PathVariable Long id,
+                                    @RequestBody @Valid ApplicationStatusRequest request) {
+        return applicationService.decideResult(userId, id, request);
     }
 }

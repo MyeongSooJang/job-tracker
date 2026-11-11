@@ -95,7 +95,7 @@ class ApplicationTest {
     void 면접_후_불합격이_되어도_서류_통과_기록은_유지된다() {
         Application app = applicationInInterview();
 
-        app.advanceStatus(ApplicationStatus.REJECTED);
+        app.reject();
 
         assertThat(app.isDocumentPassed()).isTrue();
         assertThat(app.getDocumentPassedAt()).isEqualTo(PASSED_AT);
@@ -105,7 +105,7 @@ class ApplicationTest {
     void 면접_후_합격해도_서류_통과_기록은_유지된다() {
         Application app = applicationInInterview();
 
-        app.advanceStatus(ApplicationStatus.ACCEPTED);
+        app.accept();
 
         assertThat(app.getDocumentPassedAt()).isEqualTo(PASSED_AT);
     }
@@ -114,7 +114,7 @@ class ApplicationTest {
     void 서류_단계에서_불합격하면_서류_통과로_기록되지_않는다() {
         Application app = applicationInResumeSubmitted();
 
-        app.advanceStatus(ApplicationStatus.REJECTED);
+        app.reject();
 
         assertThat(app.isDocumentPassed()).isFalse();
         assertThat(app.getDocumentPassedAt()).isNull();
@@ -133,7 +133,7 @@ class ApplicationTest {
     @Test
     void 이미_불합격한_지원에_면접_일정이_잡혀도_상태와_기록은_바뀌지_않는다() {
         Application app = applicationInResumeSubmitted();
-        app.advanceStatus(ApplicationStatus.REJECTED);
+        app.reject();
 
         app.startInterview(PASSED_AT);
 
@@ -142,19 +142,10 @@ class ApplicationTest {
     }
 
     @Test
-    void 면접으로는_상태_전이로_직접_바꿀_수_없고_면접_일정을_등록해야_한다() {
-        Application app = applicationInResumeSubmitted();
-
-        assertErrorCode(() -> app.advanceStatus(ApplicationStatus.INTERVIEW), ErrorCode.INTERVIEW_SCHEDULE_REQUIRED);
-        assertThat(app.getStatus()).isEqualTo(ApplicationStatus.RESUME_SUBMITTED);
-        assertThat(app.isDocumentPassed()).isFalse();
-    }
-
-    @Test
     void 면접_중인_지원은_합격으로_전이할_수_있다() {
         Application app = applicationInInterview();
 
-        app.advanceStatus(ApplicationStatus.ACCEPTED);
+        app.accept();
 
         assertThat(app.getStatus()).isEqualTo(ApplicationStatus.ACCEPTED);
     }
@@ -163,7 +154,7 @@ class ApplicationTest {
     void 서류_제출_상태의_지원은_불합격으로_전이할_수_있다() {
         Application app = applicationInResumeSubmitted();
 
-        app.advanceStatus(ApplicationStatus.REJECTED);
+        app.reject();
 
         assertThat(app.getStatus()).isEqualTo(ApplicationStatus.REJECTED);
     }
@@ -172,7 +163,7 @@ class ApplicationTest {
     void 면접_중인_지원은_불합격으로_전이할_수_있다() {
         Application app = applicationInInterview();
 
-        app.advanceStatus(ApplicationStatus.REJECTED);
+        app.reject();
 
         assertThat(app.getStatus()).isEqualTo(ApplicationStatus.REJECTED);
     }
@@ -181,16 +172,16 @@ class ApplicationTest {
     void 서류_제출_상태에서_바로_합격으로_전이할_수_없다() {
         Application app = applicationInResumeSubmitted();
 
-        assertErrorCode(() -> app.advanceStatus(ApplicationStatus.ACCEPTED), ErrorCode.INVALID_STATUS_TRANSITION);
+        assertErrorCode(() -> app.accept(), ErrorCode.INVALID_STATUS_TRANSITION);
         assertThat(app.getStatus()).isEqualTo(ApplicationStatus.RESUME_SUBMITTED);
     }
 
     @Test
     void 이미_합격한_지원은_다시_전이할_수_없다() {
         Application app = applicationInInterview();
-        app.advanceStatus(ApplicationStatus.ACCEPTED);
+        app.accept();
 
-        assertErrorCode(() -> app.advanceStatus(ApplicationStatus.REJECTED), ErrorCode.INVALID_STATUS_TRANSITION);
+        assertErrorCode(() -> app.reject(), ErrorCode.INVALID_STATUS_TRANSITION);
         assertThat(app.getStatus()).isEqualTo(ApplicationStatus.ACCEPTED);
     }
 

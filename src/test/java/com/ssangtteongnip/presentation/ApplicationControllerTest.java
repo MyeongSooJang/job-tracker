@@ -112,7 +112,7 @@ class ApplicationControllerTest {
     void PATCH_applications_status_상태를_전이한다() throws Exception {
         Application app = sampleApplication();
         app.startInterview(java.time.LocalDateTime.of(2026, 11, 5, 10, 0));
-        given(applicationService.advanceStatus(eq(1L), eq(1L), any())).willReturn(app);
+        given(applicationService.decideResult(eq(1L), eq(1L), any())).willReturn(app);
 
         mockMvc.perform(patch("/api/applications/1/status")
                         .header("Authorization", BEARER)
@@ -156,7 +156,7 @@ class ApplicationControllerTest {
 
     @Test
     void 허용되지_않는_상태_전이는_400과_에러_코드를_반환한다() throws Exception {
-        given(applicationService.advanceStatus(eq(1L), eq(1L), any()))
+        given(applicationService.decideResult(eq(1L), eq(1L), any()))
                 .willThrow(new BusinessException(ErrorCode.INVALID_STATUS_TRANSITION));
 
         mockMvc.perform(patch("/api/applications/1/status")

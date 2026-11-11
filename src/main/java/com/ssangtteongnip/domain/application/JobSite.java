@@ -6,5 +6,6 @@ public enum JobSite {
     SARAMIN,
     GROUPBY,
     WANTED,
-    COMPANY_WEBSITE
+    COMPANY_WEBSITE,
+    OTHER
 }

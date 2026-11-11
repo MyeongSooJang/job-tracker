@@ -3,6 +3,7 @@ package com.ssangtteongnip.domain;
 import com.ssangtteongnip.domain.application.Application;
 import com.ssangtteongnip.domain.application.ApplicationStatus;
 import com.ssangtteongnip.domain.application.JobSite;
+import com.ssangtteongnip.domain.application.ResumeView;
 import com.ssangtteongnip.domain.company.Company;
 import com.ssangtteongnip.global.exception.ErrorCode;
 import org.junit.jupiter.api.Test;
@@ -207,5 +208,68 @@ class ApplicationTest {
         Application app = applicationInResumeSubmitted();
 
         assertErrorCode(() -> app.verifyOwner(OTHER_USER_ID), ErrorCode.APPLICATION_NOT_FOUND);
+    }
+
+    @Test
+    void 새로_만든_지원은_미열람이고_마감일이_없다() {
+        Application app = applicationInResumeSubmitted();
+
+        assertThat(app.getResumeView()).isEqualTo(ResumeView.NOT_VIEWED);
+        assertThat(app.getDeadline()).isNull();
+    }
+
+    @Test
+    void 등록할_때_마감일과_열람_여부를_지정할_수_있다() {
+        Company company = Company.create("카카오", "IT", "https://kakao.com");
+
+        Application app = Application.create(OWNER_ID, company, "백엔드 개발자", LocalDate.of(2026, 11, 1),
+                JobSite.SARAMIN, LocalDate.of(2026, 11, 30), ResumeView.VIEWED);
+
+        assertThat(app.getDeadline()).isEqualTo(LocalDate.of(2026, 11, 30));
+        assertThat(app.getResumeView()).isEqualTo(ResumeView.VIEWED);
+    }
+
+    @Test
+    void 등록할_때_열람_여부를_비울_수는_없다() {
+        Company company = Company.create("카카오", "IT", "https://kakao.com");
+
+        assertThatThrownBy(() -> Application.create(OWNER_ID, company, "백엔드 개발자", LocalDate.of(2026, 11, 1),
+                JobSite.SARAMIN, null, null)).isInstanceOf(NullPointerException.class);
+    }
+
+    @Test
+    void 열람_여부를_바꿀_수_있다() {
+        Application app = applicationInResumeSubmitted();
+
+        app.changeResumeView(ResumeView.VIEWED);
+
+        assertThat(app.getResumeView()).isEqualTo(ResumeView.VIEWED);
+    }
+
+    @Test
+    void 열람_여부를_비워서_바꿀_수는_없다() {
+        Application app = applicationInResumeSubmitted();
+
+        assertThatThrownBy(() -> app.changeResumeView(null)).isInstanceOf(NullPointerException.class);
+        assertThat(app.getResumeView()).isEqualTo(ResumeView.NOT_VIEWED);
+    }
+
+    @Test
+    void 마감일을_지정하고_다른_날짜로_바꿀_수_있다() {
+        Application app = applicationInResumeSubmitted();
+        app.changeDeadline(LocalDate.of(2026, 11, 30));
+
+        app.changeDeadline(LocalDate.of(2026, 12, 15));
+
+        assertThat(app.getDeadline()).isEqualTo(LocalDate.of(2026, 12, 15));
+    }
+
+    @Test
+    void 마감일을_비워서_바꿀_수는_없다() {
+        Application app = applicationInResumeSubmitted();
+        app.changeDeadline(LocalDate.of(2026, 11, 30));
+
+        assertThatThrownBy(() -> app.changeDeadline(null)).isInstanceOf(NullPointerException.class);
+        assertThat(app.getDeadline()).isEqualTo(LocalDate.of(2026, 11, 30));
     }
 }

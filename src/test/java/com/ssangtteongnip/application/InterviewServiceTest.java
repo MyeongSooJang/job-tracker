@@ -6,6 +6,7 @@ import com.ssangtteongnip.application.service.dto.InterviewQuestionRequest;
 import com.ssangtteongnip.application.service.dto.InterviewRequest;
 import com.ssangtteongnip.application.service.dto.InterviewScoreRequest;
 import com.ssangtteongnip.domain.application.Application;
+import com.ssangtteongnip.domain.application.ApplicationStatus;
 import com.ssangtteongnip.domain.company.Company;
 import com.ssangtteongnip.domain.interview.Interview;
 import com.ssangtteongnip.domain.interview.InterviewRepository;
@@ -14,13 +15,14 @@ import com.ssangtteongnip.global.exception.ErrorCode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.time.Clock;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Optional;
 
 import static com.ssangtteongnip.support.ErrorCodeAssertions.assertErrorCode;
@@ -40,16 +42,20 @@ class InterviewServiceTest {
     private static final Long APPLICATION_ID = 10L;
     private static final Long OTHER_APPLICATION_ID = 99L;
     private static final Long INTERVIEW_ID = 100L;
+    private static final ZoneId SEOUL = ZoneId.of("Asia/Seoul");
+    private static final LocalDateTime NOW = LocalDateTime.of(2026, 11, 12, 9, 0);
     private static final LocalDateTime INTERVIEW_DATE = LocalDateTime.of(2026, 11, 10, 14, 0);
 
     @Mock InterviewRepository interviewRepository;
     @Mock ApplicationService applicationService;
-    @InjectMocks InterviewService interviewService;
+    InterviewService interviewService;
 
     private Application application;
 
     @BeforeEach
     void setUp() {
+        Clock clock = Clock.fixed(NOW.atZone(SEOUL).toInstant(), SEOUL);
+        interviewService = new InterviewService(interviewRepository, applicationService, clock);
         Company company = Company.create("카카오", "IT", "https://kakao.com");
         application = Application.create(USER_ID, company, "백엔드 개발자", LocalDate.of(2026, 11, 1));
         ReflectionTestUtils.setField(application, "id", APPLICATION_ID);
@@ -76,6 +82,30 @@ class InterviewServiceTest {
         assertThat(registered.getApplication()).isSameAs(application);
         assertThat(registered.getRound()).isEqualTo(1);
         assertThat(registered.getScore()).isEqualTo(80);
+    }
+
+    @Test
+    void 면접을_등록하면_서류_통과로_기록되고_면접_단계가_된다() {
+        given(applicationService.findById(USER_ID, APPLICATION_ID)).willReturn(application);
+        given(interviewRepository.save(any(Interview.class))).willAnswer(i -> i.getArgument(0));
+
+        interviewService.register(USER_ID, APPLICATION_ID,
+                new InterviewRequest(1, INTERVIEW_DATE, "판교 본사", "1차 면접", null));
+
+        assertThat(application.getStatus()).isEqualTo(ApplicationStatus.INTERVIEW);
+        assertThat(application.getDocumentPassedAt()).isEqualTo(NOW);
+    }
+
+    @Test
+    void 이미_면접_중인_지원에_면접을_추가해도_서류_통과_시점은_유지된다() {
+        application.startInterview(NOW.minusDays(7));
+        given(applicationService.findById(USER_ID, APPLICATION_ID)).willReturn(application);
+        given(interviewRepository.save(any(Interview.class))).willAnswer(i -> i.getArgument(0));
+
+        interviewService.register(USER_ID, APPLICATION_ID,
+                new InterviewRequest(2, INTERVIEW_DATE, "판교 본사", "2차 면접", null));
+
+        assertThat(application.getDocumentPassedAt()).isEqualTo(NOW.minusDays(7));
     }
 
     @Test

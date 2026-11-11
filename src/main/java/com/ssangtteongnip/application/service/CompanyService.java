@@ -5,7 +5,7 @@ import com.ssangtteongnip.application.service.dto.CompanyResponse;
 import com.ssangtteongnip.application.service.dto.CompanyReviewResponse;
 import com.ssangtteongnip.domain.company.Company;
 import com.ssangtteongnip.domain.company.CompanyRepository;
-import com.ssangtteongnip.domain.review.CompanyReviewSummary;
+import com.ssangtteongnip.domain.review.CompanyReviewRating;
 import com.ssangtteongnip.domain.review.ReviewRepository;
 import com.ssangtteongnip.global.exception.BusinessException;
 import com.ssangtteongnip.global.exception.ErrorCode;
@@ -37,11 +37,11 @@ public class CompanyService {
     }
 
     public List<CompanyResponse> findAll() {
-        Map<Long, CompanyReviewSummary> summaries = reviewRepository.summarizeByCompany().stream()
-                .collect(Collectors.toMap(CompanyReviewSummary::companyId, Function.identity()));
+        Map<Long, CompanyReviewRating> ratings = reviewRepository.calculateRatingByCompany().stream()
+                .collect(Collectors.toMap(CompanyReviewRating::companyId, Function.identity()));
         return companyRepository.findAll().stream()
                 .map(company -> CompanyResponse.of(company,
-                        summaries.getOrDefault(company.getId(), CompanyReviewSummary.none(company.getId()))))
+                        ratings.getOrDefault(company.getId(), CompanyReviewRating.none(company.getId()))))
                 .toList();
     }
 
@@ -52,9 +52,9 @@ public class CompanyService {
 
     public CompanyResponse findDetail(Long id) {
         Company company = findById(id);
-        CompanyReviewSummary summary = reviewRepository.summarizeByCompanyId(id)
-                .orElse(CompanyReviewSummary.none(id));
-        return CompanyResponse.of(company, summary);
+        CompanyReviewRating rating = reviewRepository.calculateRatingByCompanyId(id)
+                .orElse(CompanyReviewRating.none(id));
+        return CompanyResponse.of(company, rating);
     }
 
     public List<CompanyReviewResponse> findReviews(Long id) {

@@ -9,7 +9,7 @@ import com.ssangtteongnip.domain.application.ApplicationStatus;
 import com.ssangtteongnip.domain.company.Company;
 import com.ssangtteongnip.domain.company.CompanyRepository;
 import com.ssangtteongnip.domain.review.ApplyRoute;
-import com.ssangtteongnip.domain.review.CompanyReviewSummary;
+import com.ssangtteongnip.domain.review.CompanyReviewRating;
 import com.ssangtteongnip.domain.review.InterviewAtmosphere;
 import com.ssangtteongnip.domain.review.Review;
 import com.ssangtteongnip.domain.review.ReviewRepository;
@@ -95,8 +95,8 @@ class CompanyServiceTest {
         ReflectionTestUtils.setField(kakao, "id", 1L);
         ReflectionTestUtils.setField(naver, "id", 2L);
         given(companyRepository.findAll()).willReturn(List.of(kakao, naver));
-        given(reviewRepository.summarizeByCompany())
-                .willReturn(List.of(new CompanyReviewSummary(1L, 2, 4.5)));
+        given(reviewRepository.calculateRatingByCompany())
+                .willReturn(List.of(new CompanyReviewRating(1L, 2, 4.5)));
 
         List<CompanyResponse> responses = companyService.findAll();
 
@@ -111,8 +111,8 @@ class CompanyServiceTest {
     void 회사_상세는_후기_수와_평균_평점을_함께_준다() {
         Company company = Company.create("카카오", "IT", "https://kakao.com");
         given(companyRepository.findById(1L)).willReturn(Optional.of(company));
-        given(reviewRepository.summarizeByCompanyId(1L))
-                .willReturn(Optional.of(new CompanyReviewSummary(1L, 3, 4.0)));
+        given(reviewRepository.calculateRatingByCompanyId(1L))
+                .willReturn(Optional.of(new CompanyReviewRating(1L, 3, 4.0)));
 
         CompanyResponse response = companyService.findDetail(1L);
 
@@ -125,7 +125,7 @@ class CompanyServiceTest {
     void 후기가_없는_회사_상세는_평균_평점이_없다() {
         Company company = Company.create("카카오", "IT", "https://kakao.com");
         given(companyRepository.findById(1L)).willReturn(Optional.of(company));
-        given(reviewRepository.summarizeByCompanyId(1L)).willReturn(Optional.empty());
+        given(reviewRepository.calculateRatingByCompanyId(1L)).willReturn(Optional.empty());
 
         CompanyResponse response = companyService.findDetail(1L);
 

@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""fix 커밋을 만들 때 문제 분석 HTML(docs/incidents/)을 같은 커밋에 남기도록 한다.
+"""fix 커밋을 만들 때 문제 분석 HTML(docs/incidents/)을 로컬에 남기도록 한다.
 
 PreToolUse(Bash): `git commit`의 첫 줄이 `fix(...)`이면
 1. 본문에 원인/영향/놓친 이유/재발 방지가 모두 있고 항목당 150자 이내인지 검사한다. 아니면 차단(종료 코드 2)한다.
-2. 커밋 메시지와 핵심 코드의 변경 전/후로 docs/incidents/<날짜>-<scope>-<해시>.html을 만들고 스테이징한다.
+2. 커밋 메시지와 핵심 코드의 변경 전/후로 docs/incidents/<날짜>-<scope>-<해시>.html을 로컬에 만든다(추적하지 않으므로 스테이징하지 않는다).
 
 이미 만들어진 커밋은 CLI로 보고서를 만들 수 있다.
     python .claude/hooks/incident-report.py --from-commit <sha> [--set "원인=..."]
@@ -45,7 +45,7 @@ GUIDE = (
     "  놓친 이유: 기존 테스트나 리뷰가 왜 잡지 못했는가\n"
     "  재발 방지: 어떤 테스트·규칙·점검으로 막는가\n"
     "  핵심 파일: (선택) 변경 전/후를 보여 줄 파일 이름. 비우면 가장 많이 바뀐 파일 1개\n"
-    "훅이 이 내용과 핵심 코드의 변경 전/후를 docs/incidents/*.html로 만들어 같은 커밋에 넣는다."
+    "훅이 이 내용과 핵심 코드의 변경 전/후를 docs/incidents/*.html로 만들어 로컬에 남긴다(docs/는 ERD.md만 git에서 추적한다)."
 )
 
 
@@ -271,8 +271,7 @@ def run_hook() -> None:
     diff = worktree_diff() if STAGING_RE.search(command) else staged_diff()
     meta = {"날짜": date.today().isoformat(), "브랜치": git("branch", "--show-current").strip(), "커밋": "커밋 전 생성"}
     path = write_report(subject, fields, parse_diff(diff), meta, date.today().isoformat())
-    git("add", path)
-    note = f"문제 분석 보고서 {path}를 만들어 스테이징했다. 같은 커밋에 포함된다."
+    note = f"문제 분석 보고서 {path}를 로컬에 만들었다. docs/incidents는 git에서 추적하지 않아 커밋에 포함되지 않는다."
     print(json.dumps({"hookSpecificOutput": {"hookEventName": "PreToolUse", "additionalContext": note}}, ensure_ascii=False))
 
 

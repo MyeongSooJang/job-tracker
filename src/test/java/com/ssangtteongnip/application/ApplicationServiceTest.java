@@ -2,6 +2,7 @@ package com.ssangtteongnip.application;
 
 import com.ssangtteongnip.application.service.ApplicationService;
 import com.ssangtteongnip.application.service.CompanyService;
+import com.ssangtteongnip.application.service.dto.ApplicationJobSiteRequest;
 import com.ssangtteongnip.application.service.dto.ApplicationRequest;
 import com.ssangtteongnip.application.service.dto.ApplicationStatusRequest;
 import com.ssangtteongnip.domain.application.Application;
@@ -63,6 +64,28 @@ class ApplicationServiceTest {
         Application found = applicationService.findById(OWNER_ID, APPLICATION_ID);
 
         assertThat(found).isSameAs(app);
+    }
+
+    @Test
+    void 소유자는_자신의_지원_건의_구직_사이트를_바꿀_수_있다() {
+        Application app = application();
+        given(applicationRepository.findById(APPLICATION_ID)).willReturn(Optional.of(app));
+
+        applicationService.changeJobSite(OWNER_ID, APPLICATION_ID, new ApplicationJobSiteRequest(JobSite.GROUPBY));
+
+        assertThat(app.getJobSite()).isEqualTo(JobSite.GROUPBY);
+    }
+
+    @Test
+    void 다른_사용자의_지원_건은_구직_사이트를_바꿀_수_없다() {
+        Application app = application();
+        app.changeJobSite(JobSite.WANTED);
+        given(applicationRepository.findById(APPLICATION_ID)).willReturn(Optional.of(app));
+
+        assertErrorCode(
+                () -> applicationService.changeJobSite(OTHER_USER_ID, APPLICATION_ID, new ApplicationJobSiteRequest(JobSite.OTHER)),
+                ErrorCode.APPLICATION_NOT_FOUND);
+        assertThat(app.getJobSite()).isEqualTo(JobSite.WANTED);
     }
 
     @Test

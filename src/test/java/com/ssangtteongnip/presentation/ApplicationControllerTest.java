@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ssangtteongnip.application.service.ApplicationService;
 import com.ssangtteongnip.domain.application.Application;
 import com.ssangtteongnip.domain.application.ApplicationStatus;
+import com.ssangtteongnip.domain.application.JobSite;
 import com.ssangtteongnip.domain.company.Company;
 import com.ssangtteongnip.global.exception.BusinessException;
 import com.ssangtteongnip.global.exception.ErrorCode;
@@ -72,6 +73,38 @@ class ApplicationControllerTest {
                                 Map.of("companyId", 1, "position", "백엔드 개발자", "appliedDate", LocalDate.now().toString()))))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
+    }
+
+    @Test
+    void PATCH_applications_job_site_구직_사이트를_변경한다() throws Exception {
+        Application app = sampleApplication();
+        app.changeJobSite(JobSite.WANTED);
+        given(applicationService.changeJobSite(eq(1L), eq(1L), any())).willReturn(app);
+
+        mockMvc.perform(patch("/api/applications/1/job-site")
+                        .header("Authorization", BEARER)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of("jobSite", "WANTED"))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.jobSite").value("WANTED"));
+    }
+
+    @Test
+    void 구직_사이트가_없으면_구직_사이트_변경은_400을_반환한다() throws Exception {
+        mockMvc.perform(patch("/api/applications/1/job-site")
+                        .header("Authorization", BEARER)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
+    }
+
+    @Test
+    void 토큰이_없으면_구직_사이트_변경은_401을_반환한다() throws Exception {
+        mockMvc.perform(patch("/api/applications/1/job-site")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of("jobSite", "WANTED"))))
+                .andExpect(status().isUnauthorized());
     }
 
     @Test

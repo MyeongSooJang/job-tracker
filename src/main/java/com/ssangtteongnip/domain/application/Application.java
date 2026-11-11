@@ -78,6 +78,10 @@ public class Application {
         }
     }
 
+    public void changeJobSite(JobSite jobSite) {
+        this.jobSite = Objects.requireNonNull(jobSite);
+    }
+
     public void advanceStatus(ApplicationStatus next) {
         if (!this.status.canAdvanceTo(next)) {
             throw new BusinessException(ErrorCode.INVALID_STATUS_TRANSITION);

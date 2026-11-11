@@ -1,6 +1,7 @@
 package com.ssangtteongnip.presentation.controller;
 
 import com.ssangtteongnip.application.service.ApplicationService;
+import com.ssangtteongnip.application.service.dto.ApplicationJobSiteRequest;
 import com.ssangtteongnip.application.service.dto.ApplicationRequest;
 import com.ssangtteongnip.application.service.dto.ApplicationStatusRequest;
 import com.ssangtteongnip.domain.application.Application;
@@ -38,6 +39,13 @@ public class ApplicationController {
     @GetMapping("/{id}")
     public Application findById(@AuthenticationPrincipal Long userId, @PathVariable Long id) {
         return applicationService.findById(userId, id);
+    }
+
+    @PatchMapping("/{id}/job-site")
+    public Application changeJobSite(@AuthenticationPrincipal Long userId,
+                                     @PathVariable Long id,
+                                     @RequestBody @Valid ApplicationJobSiteRequest request) {
+        return applicationService.changeJobSite(userId, id, request);
     }
 
     @PatchMapping("/{id}/status")

@@ -2,6 +2,7 @@ package com.ssangtteongnip.domain;
 
 import com.ssangtteongnip.domain.application.Application;
 import com.ssangtteongnip.domain.application.ApplicationStatus;
+import com.ssangtteongnip.domain.application.JobSite;
 import com.ssangtteongnip.domain.company.Company;
 import com.ssangtteongnip.global.exception.ErrorCode;
 import org.junit.jupiter.api.Test;
@@ -11,6 +12,7 @@ import java.time.LocalDate;
 import static com.ssangtteongnip.support.ErrorCodeAssertions.assertErrorCode;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class ApplicationTest {
 
@@ -33,6 +35,34 @@ class ApplicationTest {
         Application app = applicationInResumeSubmitted();
 
         assertThat(app.getStatus()).isEqualTo(ApplicationStatus.RESUME_SUBMITTED);
+    }
+
+    @Test
+    void 사이트를_모르던_지원도_구직_사이트를_지정할_수_있다() {
+        Application app = applicationInResumeSubmitted();
+
+        app.changeJobSite(JobSite.WANTED);
+
+        assertThat(app.getJobSite()).isEqualTo(JobSite.WANTED);
+    }
+
+    @Test
+    void 지정한_구직_사이트는_다른_사이트로_바꿀_수_있다() {
+        Application app = applicationInResumeSubmitted();
+        app.changeJobSite(JobSite.WANTED);
+
+        app.changeJobSite(JobSite.OTHER);
+
+        assertThat(app.getJobSite()).isEqualTo(JobSite.OTHER);
+    }
+
+    @Test
+    void 구직_사이트를_비워서_바꿀_수는_없다() {
+        Application app = applicationInResumeSubmitted();
+        app.changeJobSite(JobSite.WANTED);
+
+        assertThatThrownBy(() -> app.changeJobSite(null)).isInstanceOf(NullPointerException.class);
+        assertThat(app.getJobSite()).isEqualTo(JobSite.WANTED);
     }
 
     @Test

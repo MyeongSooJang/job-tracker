@@ -30,7 +30,7 @@ class ProfileTest {
                 "https://github.com/hong", null, null, "OO대 컴퓨터공학", "인턴 6개월", "백엔드 개발자", "안녕하세요",
                 LocalDate.of(2025, 3, 1));
 
-        profile.update("홍길순", info);
+        profile.reviseNameAndInfo("홍길순", info);
 
         assertThat(user.getName()).isEqualTo("홍길순");
         assertThat(profile.getInfo().getPhone()).isEqualTo("010-1234-5678");
@@ -42,10 +42,10 @@ class ProfileTest {
     @Test
     void update_취업_준비_시작일을_비우면_null이_된다() {
         Profile profile = Profile.create(user);
-        profile.update("홍길동", PersonalInfo.of(null, null, null, null, null, null, null, null, null, null,
+        profile.reviseNameAndInfo("홍길동", PersonalInfo.of(null, null, null, null, null, null, null, null, null, null,
                 LocalDate.of(2025, 3, 1)));
 
-        profile.update("홍길동", PersonalInfo.empty());
+        profile.reviseNameAndInfo("홍길동", PersonalInfo.empty());
 
         assertThat(profile.getInfo().getJobSearchStartDate()).isNull();
     }

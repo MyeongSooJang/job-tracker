@@ -110,7 +110,7 @@ class StudyLogControllerTest {
 
     @Test
     void PUT_글을_수정하고_200과_수정된_글을_반환한다() throws Exception {
-        given(studyLogService.update(1L, 10L, new StudyLogRequest("JPA 정리", "JPA 공부", 90))).willReturn(response());
+        given(studyLogService.rewrite(1L, 10L, new StudyLogRequest("JPA 정리", "JPA 공부", 90))).willReturn(response());
 
         mockMvc.perform(put("/api/me/study-logs/10")
                         .header("Authorization", BEARER)
@@ -123,7 +123,7 @@ class StudyLogControllerTest {
 
     @Test
     void PUT_남의_글이거나_없는_글이면_404와_에러코드를_반환한다() throws Exception {
-        given(studyLogService.update(1L, 99L, new StudyLogRequest("제목", "내용", null)))
+        given(studyLogService.rewrite(1L, 99L, new StudyLogRequest("제목", "내용", null)))
                 .willThrow(new BusinessException(ErrorCode.STUDY_LOG_NOT_FOUND));
 
         mockMvc.perform(put("/api/me/study-logs/99")

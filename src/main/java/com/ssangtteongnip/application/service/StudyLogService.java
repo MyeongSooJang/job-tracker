@@ -43,7 +43,7 @@ public class StudyLogService {
     }
 
     @Transactional
-    public StudyLogResponse update(Long userId, Long id, StudyLogRequest request) {
+    public StudyLogResponse rewrite(Long userId, Long id, StudyLogRequest request) {
         StudyLog studyLog = findOrThrow(userId, id);
         Set<UUID> removedImages = studyLog.imageIdsRemovedBy(request.content());
         studyLog.write(request.title(), request.content(), request.minutesOrZero());

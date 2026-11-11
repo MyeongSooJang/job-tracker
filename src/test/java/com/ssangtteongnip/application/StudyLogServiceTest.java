@@ -105,7 +105,7 @@ class StudyLogServiceTest {
         StudyLog existing = log(TODAY, 30);
         given(studyLogRepository.findByIdAndUserId(LOG_ID, USER_ID)).willReturn(Optional.of(existing));
 
-        StudyLogResponse response = studyLogService.update(USER_ID, LOG_ID, new StudyLogRequest("새 제목", "내용 보강", 120));
+        StudyLogResponse response = studyLogService.rewrite(USER_ID, LOG_ID, new StudyLogRequest("새 제목", "내용 보강", 120));
 
         assertThat(response.title()).isEqualTo("새 제목");
         assertThat(existing.getContent()).isEqualTo("내용 보강");
@@ -118,7 +118,7 @@ class StudyLogServiceTest {
         given(studyLogRepository.findByIdAndUserId(LOG_ID, USER_ID)).willReturn(Optional.empty());
 
         assertErrorCode(
-                () -> studyLogService.update(USER_ID, LOG_ID, new StudyLogRequest("제목", "내용", 30)),
+                () -> studyLogService.rewrite(USER_ID, LOG_ID, new StudyLogRequest("제목", "내용", 30)),
                 ErrorCode.STUDY_LOG_NOT_FOUND);
     }
 
@@ -175,7 +175,7 @@ class StudyLogServiceTest {
         StudyLog existing = StudyLog.create(USER_ID, TODAY, "제목", image(kept) + image(removed), 30, TODAY);
         given(studyLogRepository.findByIdAndUserId(LOG_ID, USER_ID)).willReturn(Optional.of(existing));
 
-        studyLogService.update(USER_ID, LOG_ID, new StudyLogRequest("제목", "새 내용 " + image(kept), 30));
+        studyLogService.rewrite(USER_ID, LOG_ID, new StudyLogRequest("제목", "새 내용 " + image(kept), 30));
 
         assertThat(existing.getContent()).contains(kept.toString()).doesNotContain(removed.toString());
         verify(studyImageService).deleteUnused(USER_ID, Set.of(removed));
@@ -186,7 +186,7 @@ class StudyLogServiceTest {
         StudyLog existing = StudyLog.create(USER_ID, TODAY, "제목", image(UUID.randomUUID()), 30, TODAY);
         given(studyLogRepository.findByIdAndUserId(LOG_ID, USER_ID)).willReturn(Optional.of(existing));
 
-        assertErrorCode(() -> studyLogService.update(USER_ID, LOG_ID, new StudyLogRequest("제목", " ", 30)),
+        assertErrorCode(() -> studyLogService.rewrite(USER_ID, LOG_ID, new StudyLogRequest("제목", " ", 30)),
                 ErrorCode.STUDY_CONTENT_REQUIRED);
 
         verifyNoInteractions(studyImageService);

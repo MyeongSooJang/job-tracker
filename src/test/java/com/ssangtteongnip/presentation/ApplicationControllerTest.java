@@ -2,6 +2,8 @@ package com.ssangtteongnip.presentation;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ssangtteongnip.application.service.ApplicationService;
+import com.ssangtteongnip.application.service.dto.ApplicationDeadlineRequest;
+import com.ssangtteongnip.application.service.dto.ApplicationResumeViewRequest;
 import com.ssangtteongnip.application.service.dto.JobSiteStatisticsResponse;
 import com.ssangtteongnip.domain.application.Application;
 import com.ssangtteongnip.domain.application.ApplicationStatus;
@@ -23,6 +25,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -229,7 +232,8 @@ class ApplicationControllerTest {
     void PATCH_applications_deadline_공고_마감일을_변경한다() throws Exception {
         Application app = sampleApplication();
         app.changeDeadline(LocalDate.of(2026, 11, 30));
-        given(applicationService.changeDeadline(eq(1L), eq(1L), any())).willReturn(app);
+        given(applicationService.changeDeadline(eq(1L), eq(1L),
+                eq(new ApplicationDeadlineRequest(LocalDate.of(2026, 11, 30))))).willReturn(app);
 
         mockMvc.perform(patch("/api/applications/1/deadline")
                         .header("Authorization", BEARER)
@@ -261,7 +265,8 @@ class ApplicationControllerTest {
     void PATCH_applications_resume_view_열람_여부를_변경한다() throws Exception {
         Application app = sampleApplication();
         app.changeResumeView(ResumeView.VIEWED);
-        given(applicationService.changeResumeView(eq(1L), eq(1L), any())).willReturn(app);
+        given(applicationService.changeResumeView(eq(1L), eq(1L),
+                eq(new ApplicationResumeViewRequest(ResumeView.VIEWED)))).willReturn(app);
 
         mockMvc.perform(patch("/api/applications/1/resume-view")
                         .header("Authorization", BEARER)
@@ -285,7 +290,7 @@ class ApplicationControllerTest {
     void 지원_건_응답에_마감일과_열람_여부와_자동_불합격_시각이_담긴다() throws Exception {
         Application app = Application.create(1L, Company.create("카카오", "IT", "https://kakao.com"), "백엔드 개발자",
                 LocalDate.of(2026, 10, 1), JobSite.SARAMIN, LocalDate.of(2026, 10, 10), ResumeView.NOT_VIEWED);
-        app.rejectIfDeadlineExpired(java.time.LocalDateTime.of(2026, 11, 11, 7, 0));
+        app.rejectIfDeadlineExpired(LocalDateTime.of(2026, 11, 11, 7, 0));
         given(applicationService.findById(1L, 1L)).willReturn(app);
 
         mockMvc.perform(get("/api/applications/1").header("Authorization", BEARER))

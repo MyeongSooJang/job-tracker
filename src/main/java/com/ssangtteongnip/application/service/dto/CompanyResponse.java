@@ -14,7 +14,7 @@ public record CompanyResponse(
         long reviewCount,
         Double averageRating) {
 
-    public static CompanyResponse of(Company company, CompanyReviewRating rating) {
+    public static CompanyResponse attachRating(Company company, CompanyReviewRating rating) {
         return new CompanyResponse(
                 company.getId(),
                 company.getName(),

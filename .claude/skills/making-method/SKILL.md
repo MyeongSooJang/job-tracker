@@ -69,18 +69,21 @@ description: Use when creating, renaming, or changing a Java method or its signa
 |---|---|---|
 | 판단 | `canChangeStatus(next)` | true/false만 답한다. 상태를 바꾸지 않는다 |
 | 검사 | `validateStatusChange(next)` | 안 되면 예외를 던진다. 상태를 바꾸지 않는다 |
-| 변경 | `changeStatus(next)` | 상태만 바꾼다. 판단은 하지 않는다 |
+| 변경 | 대입 한 줄 (`this.status = next;`) | 값만 바꾼다. 판단은 하지 않는다 |
 
 ```java
 // 나쁨: 검사와 변경을 한 메서드가 함께 한다 (이름 moveTo에는 검사한다는 게 안 드러남)
 public void moveTo(ApplicationStatus next) { if (!status.canAdvanceTo(next)) throw ...; this.status = next; }
 
-// 좋음: 목적별로 나눠 호출부에서 순서대로 읽힌다
+// 좋음: 검사는 이름 있는 메서드로, 변경은 대입 한 줄로. 호출부에서 순서대로 읽힌다
 public void accept() {
     validateStatusChange(ACCEPTED);
-    changeStatus(ACCEPTED);
+    this.status = ACCEPTED;
 }
 ```
+
+- **private 한 줄 대입 헬퍼는 만들지 않는다.** `changeStatus(next) { this.status = next; }`처럼 대입만 하는 메서드는 이름이 새 정보를 주지 않으므로 대입을 그대로 쓴다. 이름이 규칙이나 의도를 설명하는 경우(`validateStatusChange`)만 메서드로 뺀다.
+- 예외: **외부에서 부르는 public 변경 메서드**(`changeMemo(memo)`)는 setter를 금지한 대신 쓰는 통로이고 검증이 붙을 자리이므로 한 줄 대입이어도 둔다.
 
 - 조건이 안 맞을 때 **조용히 아무것도 안 하는 변경 메서드**를 만들지 않는다. 호출한 쪽이 바뀌었는지 알 수 없다. 불가능하면 예외를 던지거나, 판단 메서드를 따로 둔다.
 - 판단 메서드를 서비스에서 이어 부르면 서비스에 도메인 로직이 생긴다. 판단과 변경을 잇는 일은 도메인 메서드 안에서 한다.
@@ -94,6 +97,7 @@ public void accept() {
 - [ ] 인자 안에 겹친 식이 없다
 - [ ] 이름이 실제 동작과 일치한다 (이름보다 많은 일을 하지 않는다)
 - [ ] 판단 메서드는 판단만, 변경 메서드는 변경만 한다 (조건 불충족 시 조용히 무시하지 않는다)
+- [ ] 이름이 새 정보를 주지 않는 private 한 줄 대입 헬퍼를 만들지 않았다
 - [ ] 이름에 인자가 이미 말해 주는 `To`/`By`가 붙어 있지 않다
 - [ ] `advance`처럼 한 번 더 해석해야 하는 단어가 없다
 - [ ] 기존 `of`/`from`·모호한 이름은 범위 밖이면 고치지 않고 보고만 했다

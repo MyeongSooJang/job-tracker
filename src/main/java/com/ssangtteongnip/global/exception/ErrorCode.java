@@ -24,7 +24,6 @@ public enum ErrorCode {
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "로그인이 필요합니다."),
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "사용자를 찾을 수 없습니다."),
     PROFILE_NOT_FOUND(HttpStatus.NOT_FOUND, "프로필을 찾을 수 없습니다."),
-    RESUME_NOT_FOUND(HttpStatus.NOT_FOUND, "등록된 이력서가 없습니다."),
     FILE_NOT_FOUND(HttpStatus.NOT_FOUND, "파일을 찾을 수 없습니다."),
     FILE_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "저장할 수 있는 파일 개수를 초과했습니다."),
     INVALID_FILE_CATEGORY(HttpStatus.BAD_REQUEST, "파일 종류가 올바르지 않습니다."),

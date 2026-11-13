@@ -62,11 +62,11 @@ public class UserFile {
         UserFile file = new UserFile();
         file.user = user;
         file.type = type;
-        file.objectKey = newObjectKey(user);
-        storage.put(file.objectKey, content, CONTENT_TYPE);
         file.fileName = sanitize(fileName);
         file.sizeBytes = content.length;
         file.contentType = CONTENT_TYPE;
+        file.objectKey = newObjectKey(user);
+        storage.put(file.objectKey, content, CONTENT_TYPE);
         return file;
     }
 

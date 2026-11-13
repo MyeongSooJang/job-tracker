@@ -7,24 +7,24 @@ import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.Arrays;
-import java.util.Optional;
 import java.util.UUID;
 
 @Entity
-@Table(name = "resume_files")
+@Table(name = "user_files")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @EntityListeners(AuditingEntityListener.class)
-public class ResumeFile {
+public class UserFile {
 
+    public static final int MAX_FILES_PER_USER = 20;
     public static final int MAX_SIZE_BYTES = 5 * 1024 * 1024;
-    private static final String DEFAULT_FILE_NAME = "resume.pdf";
+    private static final String DEFAULT_FILE_NAME = "file.pdf";
     private static final String CONTENT_TYPE = "application/pdf";
     private static final byte[] PDF_MAGIC = "%PDF-".getBytes(StandardCharsets.US_ASCII);
 
@@ -32,9 +32,13 @@ public class ResumeFile {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @OneToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "user_id", nullable = false, unique = true)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "user_id", nullable = false)
     private User user;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private FileType type;
 
     @Column(nullable = false)
     private String fileName;
@@ -48,29 +52,29 @@ public class ResumeFile {
     @Column(name = "content_type")
     private String contentType;
 
-    @LastModifiedDate
-    private LocalDateTime updatedAt;
+    @CreatedDate
+    @Column(nullable = false, updatable = false)
+    private LocalDateTime createdAt;
 
-    public static ResumeFile upload(User user, String fileName, byte[] content, FileStorage storage) {
-        ResumeFile resume = new ResumeFile();
-        resume.user = user;
-        resume.replace(fileName, content, storage);
-        return resume;
+    // 검증과 저장소 업로드가 끝난 뒤에만 객체를 돌려준다. 실패하면 파일은 만들어지지 않는다.
+    public static UserFile upload(User user, FileType type, String fileName, byte[] content, FileStorage storage) {
+        validate(content);
+        UserFile file = new UserFile();
+        file.user = user;
+        file.type = type;
+        file.fileName = sanitize(fileName);
+        file.sizeBytes = content.length;
+        file.contentType = CONTENT_TYPE;
+        file.objectKey = newObjectKey(user);
+        storage.put(file.objectKey, content, CONTENT_TYPE);
+        return file;
     }
 
-    // 새 객체를 새 키로 올린 뒤 필드를 바꾼다. 검증이나 업로드가 실패하면 기존 상태를 유지한다.
-    // 이전 객체는 지우지 않고 키만 돌려준다. DB 커밋 뒤에 호출한 쪽이 지운다.
-    public Optional<String> replace(String fileName, byte[] content, FileStorage storage) {
-        validate(content);
-        String newKey = newObjectKey();
-        storage.put(newKey, content, CONTENT_TYPE);
-
-        Optional<String> previousKey = Optional.ofNullable(this.objectKey);
-        this.fileName = sanitize(fileName);
-        this.sizeBytes = content.length;
-        this.objectKey = newKey;
-        this.contentType = CONTENT_TYPE;
-        return previousKey;
+    // 현재 개수가 한도에 이미 닿았으면 더 올릴 수 없다.
+    public static void ensureCanAdd(long currentCount) {
+        if (currentCount >= MAX_FILES_PER_USER) {
+            throw new BusinessException(ErrorCode.FILE_LIMIT_EXCEEDED);
+        }
     }
 
     public PresignedUrl downloadUrl(FileStorage storage) {
@@ -81,8 +85,8 @@ public class ResumeFile {
         storage.delete(objectKey);
     }
 
-    private String newObjectKey() {
-        return "resumes/" + user.getId() + "/" + UUID.randomUUID() + ".pdf";
+    private static String newObjectKey(User user) {
+        return "files/" + user.getId() + "/" + UUID.randomUUID() + ".pdf";
     }
 
     private static void validate(byte[] content) {

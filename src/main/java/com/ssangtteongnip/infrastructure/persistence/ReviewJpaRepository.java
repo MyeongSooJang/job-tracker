@@ -25,7 +25,7 @@ public interface ReviewJpaRepository extends JpaRepository<Review, Long>, Review
 
     @Override
     @Query("""
-            select new com.ssangtteongnip.domain.review.CompanyReviewRating(a.company.id, count(r), avg(r.rating))
+            select a.company.id, count(r), avg(r.rating)
             from Review r join r.application a
             where r.rating is not null
             group by a.company.id
@@ -34,7 +34,7 @@ public interface ReviewJpaRepository extends JpaRepository<Review, Long>, Review
 
     @Override
     @Query("""
-            select new com.ssangtteongnip.domain.review.CompanyReviewRating(a.company.id, count(r), avg(r.rating))
+            select a.company.id, count(r), avg(r.rating)
             from Review r join r.application a
             where a.company.id = :companyId and r.rating is not null
             group by a.company.id

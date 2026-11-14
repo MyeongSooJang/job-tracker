@@ -17,8 +17,7 @@ public interface ApplicationJpaRepository extends JpaRepository<Application, Lon
 
     @Override
     @Query("""
-            select new com.ssangtteongnip.domain.application.JobSiteStatistics(
-                a.jobSite, count(a), count(a.documentPassedAt))
+            select a.jobSite, count(a), count(a.documentPassedAt)
             from Application a
             where a.userId = :userId
             group by a.jobSite

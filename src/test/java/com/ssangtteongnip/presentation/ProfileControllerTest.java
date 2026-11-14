@@ -3,7 +3,8 @@ package com.ssangtteongnip.presentation;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ssangtteongnip.application.service.ProfileService;
 import com.ssangtteongnip.application.service.dto.ProfileResponse;
-import com.ssangtteongnip.application.service.dto.ResumeResponse;
+import com.ssangtteongnip.application.service.dto.UserFileResponse;
+import com.ssangtteongnip.domain.profile.FileType;
 import com.ssangtteongnip.domain.user.TokenProvider;
 import com.ssangtteongnip.global.config.SecurityConfig;
 import com.ssangtteongnip.presentation.controller.ProfileController;
@@ -18,6 +19,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -44,32 +46,35 @@ class ProfileControllerTest {
         given(tokenProvider.parseUserId("valid-token")).willReturn(1L);
     }
 
-    private static ProfileResponse profileResponse(ResumeResponse resume) {
+    private static ProfileResponse profileResponse(List<UserFileResponse> files) {
         return new ProfileResponse("hong@example.com", "홍길동", "010-1234-5678", null, null,
-                null, null, null, null, null, "백엔드 개발자", null, LocalDate.of(2025, 3, 1), resume);
+                null, null, null, null, null, "백엔드 개발자", null, LocalDate.of(2025, 3, 1), files);
     }
 
     @Test
-    void GET_me_profile_내_프로필과_이력서_정보를_조회한다() throws Exception {
-        ResumeResponse resume = new ResumeResponse("이력서.pdf", 1024, LocalDateTime.of(2026, 11, 1, 10, 0));
-        given(profileService.getMyProfile(1L)).willReturn(profileResponse(resume));
+    void GET_me_profile_내_프로필과_파일_목록을_종류와_함께_조회한다() throws Exception {
+        UserFileResponse file = new UserFileResponse(3L, FileType.RESUME, "이력서.pdf", 1024,
+                LocalDateTime.of(2026, 11, 1, 10, 0));
+        given(profileService.getMyProfile(1L)).willReturn(profileResponse(List.of(file)));
 
         mockMvc.perform(get("/api/me/profile").header("Authorization", BEARER))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.email").value("hong@example.com"))
                 .andExpect(jsonPath("$.desiredJob").value("백엔드 개발자"))
                 .andExpect(jsonPath("$.jobSearchStartDate").value("2025-03-01"))
-                .andExpect(jsonPath("$.resume.fileName").value("이력서.pdf"))
-                .andExpect(jsonPath("$.resume.sizeBytes").value(1024));
+                .andExpect(jsonPath("$.files[0].id").value(3))
+                .andExpect(jsonPath("$.files[0].type").value("RESUME"))
+                .andExpect(jsonPath("$.files[0].fileName").value("이력서.pdf"))
+                .andExpect(jsonPath("$.files[0].sizeBytes").value(1024));
     }
 
     @Test
-    void GET_me_profile_이력서가_없으면_resume이_null이다() throws Exception {
-        given(profileService.getMyProfile(1L)).willReturn(profileResponse(null));
+    void GET_me_profile_파일이_없으면_files가_빈_배열이다() throws Exception {
+        given(profileService.getMyProfile(1L)).willReturn(profileResponse(List.of()));
 
         mockMvc.perform(get("/api/me/profile").header("Authorization", BEARER))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.resume").doesNotExist());
+                .andExpect(jsonPath("$.files").isEmpty());
     }
 
     @Test

@@ -5,7 +5,7 @@
 ```mermaid
 erDiagram
     users ||--o| profiles : "user_id (1:1)"
-    users ||--o| resume_files : "user_id (1:1)"
+    users ||--o{ user_files : "user_id"
     users ||..o{ applications : "user_id (FK 없음)"
     users ||..o{ study_logs : "user_id (FK 없음)"
     companies ||--o{ applications : "company_id"
@@ -40,14 +40,15 @@ erDiagram
         timestamp created_at
         timestamp updated_at
     }
-    resume_files {
+    user_files {
         bigint id PK
-        bigint user_id FK,UK
+        bigint user_id FK
+        varchar type "FileType: RESUME, PORTFOLIO, CERTIFICATE, ETC"
         varchar file_name
         bigint size_bytes
         varchar object_key "S3 키"
         varchar content_type
-        timestamp updated_at
+        timestamp created_at "업로드 시각, 목록 정렬 기준"
     }
     companies {
         bigint id PK
@@ -66,6 +67,9 @@ erDiagram
         date applied_date
         varchar job_site "JobSite, 선택"
         timestamp document_passed_at "서류 통과(면접 일정 최초 등록) 시점, 서류 탈락이면 null"
+        date deadline "공고 마감일, 선택. 비어 있으면 자동 불합격 대상이 아니다"
+        varchar resume_view "ResumeView, 기본 NOT_VIEWED"
+        timestamp auto_rejected_at "마감일 + 1달 경과로 자동 불합격된 시점, 아니면 null"
         timestamp created_at
         timestamp updated_at
     }
@@ -130,4 +134,6 @@ erDiagram
 - `profiles`는 `PersonalInfo`(@Embeddable)가 같은 테이블에 펼쳐진 구조다.
 - `review_questions`는 `Review.questions`(@ElementCollection)의 컬렉션 테이블이고, `question_order`는 @OrderColumn이다.
 - 마이그레이션 도구가 없고 `ddl-auto: update`는 컬럼 추가만 하므로, 변경 사항은 운영 DB에 DDL로 직접 반영해야 할 수 있다.
+- `user_files.user_id`는 유니크가 아니다. 사용자당 최대 개수는 `UserFile.MAX_FILES_PER_USER`이고, 업로드 시 사용자 행을 잠근 뒤 개수를 확인해 지킨다.
+- `applications.resume_view`는 `not null default 'NOT_VIEWED'`로 추가되어 기존 행이 미열람으로 채워진다.
 - 2026-11-10 코드 패키지를 `com.jobtracker`에서 `com.ssangtteongnip`으로 바꿨다. 엔티티 11개가 `package`와 `import` 줄만 바뀌었고 테이블, 컬럼, 관계는 그대로다.

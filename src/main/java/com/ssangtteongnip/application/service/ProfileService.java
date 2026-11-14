@@ -2,15 +2,17 @@ package com.ssangtteongnip.application.service;
 
 import com.ssangtteongnip.application.service.dto.ProfileRequest;
 import com.ssangtteongnip.application.service.dto.ProfileResponse;
-import com.ssangtteongnip.application.service.dto.ResumeResponse;
+import com.ssangtteongnip.application.service.dto.UserFileResponse;
 import com.ssangtteongnip.domain.profile.Profile;
 import com.ssangtteongnip.domain.profile.ProfileRepository;
-import com.ssangtteongnip.domain.profile.ResumeFileRepository;
+import com.ssangtteongnip.domain.profile.UserFileRepository;
 import com.ssangtteongnip.global.exception.BusinessException;
 import com.ssangtteongnip.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -18,7 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class ProfileService {
 
     private final ProfileRepository profileRepository;
-    private final ResumeFileRepository resumeFileRepository;
+    private final UserFileRepository userFileRepository;
 
     public ProfileResponse getMyProfile(Long userId) {
         return toResponse(userId, findProfile(userId));
@@ -37,9 +39,9 @@ public class ProfileService {
     }
 
     private ProfileResponse toResponse(Long userId, Profile profile) {
-        ResumeResponse resume = resumeFileRepository.findSummaryByUserId(userId)
-                .map(ResumeResponse::from)
-                .orElse(null);
-        return ProfileResponse.of(profile, resume);
+        List<UserFileResponse> files = userFileRepository.findUserFilesNewestFirst(userId).stream()
+                .map(UserFileResponse::describe)
+                .toList();
+        return ProfileResponse.of(profile, files);
     }
 }

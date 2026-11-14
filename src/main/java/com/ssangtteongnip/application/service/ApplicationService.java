@@ -1,7 +1,9 @@
 package com.ssangtteongnip.application.service;
 
+import com.ssangtteongnip.application.service.dto.ApplicationDeadlineRequest;
 import com.ssangtteongnip.application.service.dto.ApplicationJobSiteRequest;
 import com.ssangtteongnip.application.service.dto.ApplicationRequest;
+import com.ssangtteongnip.application.service.dto.ApplicationResumeViewRequest;
 import com.ssangtteongnip.application.service.dto.ApplicationStatusRequest;
 import com.ssangtteongnip.application.service.dto.JobSiteStatisticsResponse;
 import com.ssangtteongnip.domain.application.Application;
@@ -14,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -29,7 +32,7 @@ public class ApplicationService {
         Company company = companyService.findById(request.companyId());
         return applicationRepository.save(
                 Application.create(userId, company, request.position(), request.appliedDate(),
-                        request.jobSite())
+                        request.jobSite(), request.deadline(), request.resumeView())
         );
     }
 
@@ -62,9 +65,35 @@ public class ApplicationService {
     }
 
     @Transactional
+    public Application changeDeadline(Long userId, Long id, ApplicationDeadlineRequest request) {
+        Application application = findById(userId, id);
+        application.changeDeadline(request.deadline());
+        return application;
+    }
+
+    @Transactional
+    public Application changeResumeView(Long userId, Long id, ApplicationResumeViewRequest request) {
+        Application application = findById(userId, id);
+        application.changeResumeView(request.resumeView());
+        return application;
+    }
+
+    @Transactional
     public Application decideResult(Long userId, Long id, ApplicationStatusRequest request) {
         Application application = findById(userId, id);
         request.status().applyTo(application);
         return application;
+    }
+
+    // 마감일 + 1달이 지난 서류 제출 건을 불합격으로 바꾸고, 바꾼 건 수를 돌려준다.
+    @Transactional
+    public int rejectExpiredApplications(LocalDateTime now) {
+        int rejected = 0;
+        for (Application application : applicationRepository.findPendingWithDeadline()) {
+            if (application.rejectIfDeadlineExpired(now)) {
+                rejected++;
+            }
+        }
+        return rejected;
     }
 }

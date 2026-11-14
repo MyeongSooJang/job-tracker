@@ -4,6 +4,7 @@ import com.ssangtteongnip.domain.profile.PersonalInfo;
 import com.ssangtteongnip.domain.profile.Profile;
 
 import java.time.LocalDate;
+import java.util.List;
 
 public record ProfileResponse(
         String email,
@@ -19,9 +20,9 @@ public record ProfileResponse(
         String desiredJob,
         String introduction,
         LocalDate jobSearchStartDate,
-        ResumeResponse resume) {
+        List<UserFileResponse> files) {
 
-    public static ProfileResponse of(Profile profile, ResumeResponse resume) {
+    public static ProfileResponse of(Profile profile, List<UserFileResponse> files) {
         PersonalInfo info = profile.getInfo();
         return new ProfileResponse(
                 profile.getUser().getEmail(),
@@ -37,6 +38,6 @@ public record ProfileResponse(
                 info.getDesiredJob(),
                 info.getIntroduction(),
                 info.getJobSearchStartDate(),
-                resume);
+                files);
     }
 }

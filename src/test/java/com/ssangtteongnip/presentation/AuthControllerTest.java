@@ -12,7 +12,7 @@ import com.ssangtteongnip.presentation.controller.AuthController;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
@@ -33,9 +33,9 @@ class AuthControllerTest {
 
     @Autowired MockMvc mockMvc;
     @Autowired ObjectMapper objectMapper;
-    @MockBean TokenProvider tokenProvider;
-    @MockBean AuthService authService;
-    @MockBean EmailVerificationService emailVerificationService;
+    @MockitoBean TokenProvider tokenProvider;
+    @MockitoBean AuthService authService;
+    @MockitoBean EmailVerificationService emailVerificationService;
 
     @Test
     void POST_auth_email_verifications_인증_코드를_발송한다() throws Exception {

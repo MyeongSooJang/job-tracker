@@ -63,7 +63,7 @@ class CompanyReviewRepositoryTest {
         unwrittenReview(kakao, 3L);
         flushAndClear();
 
-        assertThat(reviewRepository.findWrittenByCompanyId(kakao.getId()))
+        assertThat(reviewRepository.findNewestRatedReviews(kakao.getId()))
                 .extracting(Review::getContent)
                 .containsExactly("나중에 쓴 후기", "먼저 쓴 후기");
     }
@@ -74,7 +74,7 @@ class CompanyReviewRepositoryTest {
         writtenReview(naver, 2L, "네이버 후기", 2);
         flushAndClear();
 
-        assertThat(reviewRepository.findWrittenByCompanyId(naver.getId()))
+        assertThat(reviewRepository.findNewestRatedReviews(naver.getId()))
                 .extracting(Review::getContent)
                 .containsExactly("네이버 후기");
     }
@@ -86,7 +86,7 @@ class CompanyReviewRepositoryTest {
         unwrittenReview(kakao, 3L);
         flushAndClear();
 
-        CompanyReviewRating rating = reviewRepository.calculateRatingByCompanyId(kakao.getId()).orElseThrow();
+        CompanyReviewRating rating = reviewRepository.findRating(kakao.getId()).orElseThrow();
 
         assertThat(rating.companyId()).isEqualTo(kakao.getId());
         assertThat(rating.reviewCount()).isEqualTo(2);
@@ -98,8 +98,8 @@ class CompanyReviewRepositoryTest {
         unwrittenReview(kakao, 1L);
         flushAndClear();
 
-        assertThat(reviewRepository.calculateRatingByCompanyId(kakao.getId())).isEmpty();
-        assertThat(reviewRepository.calculateRatingByCompanyId(toss.getId())).isEmpty();
+        assertThat(reviewRepository.findRating(kakao.getId())).isEmpty();
+        assertThat(reviewRepository.findRating(toss.getId())).isEmpty();
     }
 
     @Test
@@ -109,7 +109,7 @@ class CompanyReviewRepositoryTest {
         writtenReview(naver, 3L, "후기3", 2);
         flushAndClear();
 
-        assertThat(reviewRepository.calculateRatingByCompany())
+        assertThat(reviewRepository.findRatings())
                 .extracting(CompanyReviewRating::companyId, CompanyReviewRating::reviewCount,
                         CompanyReviewRating::averageRating)
                 .containsExactlyInAnyOrder(

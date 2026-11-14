@@ -35,7 +35,7 @@ public class CompanyService {
     }
 
     public List<CompanyResponse> findAll() {
-        List<CompanyReviewRating> ratingsFromDb = reviewRepository.calculateRatingByCompany();
+        List<CompanyReviewRating> ratingsFromDb = reviewRepository.findRatings();
         CompanyReviewRatings reviewRatings = new CompanyReviewRatings(ratingsFromDb);
         List<Company> companies = companyRepository.findAll();
 
@@ -54,14 +54,14 @@ public class CompanyService {
 
     public CompanyResponse findDetail(Long id) {
         Company company = findById(id);
-        CompanyReviewRating rating = reviewRepository.calculateRatingByCompanyId(id)
+        CompanyReviewRating rating = reviewRepository.findRating(id)
                 .orElse(CompanyReviewRating.none(id));
         return CompanyResponse.attachRating(company, rating);
     }
 
     public List<CompanyReviewResponse> findReviews(Long id) {
         findById(id);
-        return reviewRepository.findWrittenByCompanyId(id).stream()
+        return reviewRepository.findNewestRatedReviews(id).stream()
                 .map(CompanyReviewResponse::from)
                 .toList();
     }

@@ -36,6 +36,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - 파생 쿼리 이름이 **30자 이상**이거나, 조건이 **3개 이상**이거나, `OrderBy`가 붙으면 쓰지 않고 `@Query`와 의미 중심 이름으로 바꾼다. (예: `findInPeriod`, `findRatings`)
 - `@Query`는 `XxxJpaRepository`에 `@Override`로 둔다. 정렬·범위 포함 여부 같은 의미는 주석이 아니라 메소드 이름에 담고, 파라미터가 알려주는 정보(`ByCompanyId` 등)는 이름에 반복하지 않는다. (예: `findNewestRatedReviews(companyId)`)
 - 파라미터는 `@Param`으로 이름을 명시한다.
+- `@Query` 안에 클래스·enum의 전체 경로를 쓰지 않는다. 집계 결과는 `select new 경로(...)` 대신 `select a.x, count(a)`로 쓰고 반환 타입(record)에 맡기며(생성자 인자 순서와 같게, 별칭 없이), enum 값은 경로 없이 쓴다. (예: `a.status = RESUME_SUBMITTED`)
 - 기준 미만의 짧은 파생 쿼리(`findByUserIdAndStatus`)는 그대로 둔다.
 
 ### 계층별 책임

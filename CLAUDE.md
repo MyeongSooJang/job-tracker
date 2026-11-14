@@ -74,6 +74,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - 연관관계가 LAZY라서 컨트롤러/DTO 변환 시점에 `LazyInitializationException`이 발생할 수 있다. 서비스 트랜잭션 안에서 필요한 연관을 초기화할 것.
 - CORS 허용 origin은 `CorsConfig`에 하드코딩되어 있다 (localhost:5173, `*.vercel.app`, 프론트엔드 Vercel 도메인). 프론트 도메인이 바뀌면 여기를 수정.
+- 삭제 예정(`@Deprecated(forRemoval = true)`)으로 표시된 API는 새로 쓰지 않는다. 컴파일 경고 `[removal]`이 나오면 그 자리에서 새 API로 교체하고, 라이브러리 버전을 올린 뒤에는 `./gradlew compileJava compileTestJava --rerun-tasks`로 경고가 0건인지 확인한다. (예: `@MockBean` 대신 `@MockitoBean`)
 
 ## 테스트 작성
 

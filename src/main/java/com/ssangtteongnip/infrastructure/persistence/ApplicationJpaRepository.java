@@ -28,7 +28,7 @@ public interface ApplicationJpaRepository extends JpaRepository<Application, Lon
     @Override
     @Query("""
             select a from Application a
-            where a.status = com.ssangtteongnip.domain.application.ApplicationStatus.RESUME_SUBMITTED
+            where a.status = RESUME_SUBMITTED
               and a.deadline is not null
             """)
     List<Application> findPendingWithDeadline();

@@ -9,8 +9,7 @@ public interface ReviewRepository {
     List<Review> findByApplicationUserId(Long userId);
     boolean existsByApplicationId(Long applicationId);
 
-    // 작성된(평점이 있는) 후기만, 최신순
-    List<Review> findWrittenByCompanyId(Long companyId);
-    List<CompanyReviewRating> calculateRatingByCompany();
-    Optional<CompanyReviewRating> calculateRatingByCompanyId(Long companyId);
+    List<Review> findNewestRatedReviews(Long companyId);
+    List<CompanyReviewRating> findRatings();
+    Optional<CompanyReviewRating> findRating(Long companyId);
 }

@@ -7,7 +7,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpHeaders;
 import org.springframework.test.web.servlet.MockMvc;
@@ -23,8 +23,8 @@ class CorsConfigTest {
     private static final String API_PATH = "/api/companies";
 
     @Autowired MockMvc mockMvc;
-    @MockBean TokenProvider tokenProvider;
-    @MockBean CompanyService companyService;
+    @MockitoBean TokenProvider tokenProvider;
+    @MockitoBean CompanyService companyService;
 
     @ParameterizedTest
     @ValueSource(strings = {

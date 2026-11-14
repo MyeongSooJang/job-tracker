@@ -12,7 +12,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpHeaders;
 import org.springframework.mock.web.MockMultipartFile;
@@ -37,8 +37,8 @@ class StudyImageControllerTest {
     private static final String BEARER = "Bearer valid-token";
 
     @Autowired MockMvc mockMvc;
-    @MockBean TokenProvider tokenProvider;
-    @MockBean StudyImageService studyImageService;
+    @MockitoBean TokenProvider tokenProvider;
+    @MockitoBean StudyImageService studyImageService;
 
     @BeforeEach
     void setUp() {

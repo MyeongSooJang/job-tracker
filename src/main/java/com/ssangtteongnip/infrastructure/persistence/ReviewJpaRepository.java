@@ -15,26 +15,29 @@ public interface ReviewJpaRepository extends JpaRepository<Review, Long>, Review
 
     List<Review> findByApplicationUserId(Long userId);
 
+    @Override
     @Query("""
             select r from Review r join fetch r.application a
             where a.company.id = :companyId and r.rating is not null
             order by r.createdAt desc, r.id desc
             """)
-    List<Review> findWrittenByCompanyId(@Param("companyId") Long companyId);
+    List<Review> findNewestRatedReviews(@Param("companyId") Long companyId);
 
+    @Override
     @Query("""
-            select new com.ssangtteongnip.domain.review.CompanyReviewRating(a.company.id, count(r), avg(r.rating))
+            select a.company.id, count(r), avg(r.rating)
             from Review r join r.application a
             where r.rating is not null
             group by a.company.id
             """)
-    List<CompanyReviewRating> calculateRatingByCompany();
+    List<CompanyReviewRating> findRatings();
 
+    @Override
     @Query("""
-            select new com.ssangtteongnip.domain.review.CompanyReviewRating(a.company.id, count(r), avg(r.rating))
+            select a.company.id, count(r), avg(r.rating)
             from Review r join r.application a
             where a.company.id = :companyId and r.rating is not null
             group by a.company.id
             """)
-    Optional<CompanyReviewRating> calculateRatingByCompanyId(@Param("companyId") Long companyId);
+    Optional<CompanyReviewRating> findRating(@Param("companyId") Long companyId);
 }

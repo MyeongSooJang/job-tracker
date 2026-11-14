@@ -95,7 +95,7 @@ class CompanyServiceTest {
         ReflectionTestUtils.setField(kakao, "id", 1L);
         ReflectionTestUtils.setField(naver, "id", 2L);
         given(companyRepository.findAll()).willReturn(List.of(kakao, naver));
-        given(reviewRepository.calculateRatingByCompany())
+        given(reviewRepository.findRatings())
                 .willReturn(List.of(new CompanyReviewRating(1L, 2, 4.5)));
 
         List<CompanyResponse> responses = companyService.findAll();
@@ -111,7 +111,7 @@ class CompanyServiceTest {
     void 회사_상세는_후기_수와_평균_평점을_함께_준다() {
         Company company = Company.create("카카오", "IT", "https://kakao.com");
         given(companyRepository.findById(1L)).willReturn(Optional.of(company));
-        given(reviewRepository.calculateRatingByCompanyId(1L))
+        given(reviewRepository.findRating(1L))
                 .willReturn(Optional.of(new CompanyReviewRating(1L, 3, 4.0)));
 
         CompanyResponse response = companyService.findDetail(1L);
@@ -125,7 +125,7 @@ class CompanyServiceTest {
     void 후기가_없는_회사_상세는_평균_평점이_없다() {
         Company company = Company.create("카카오", "IT", "https://kakao.com");
         given(companyRepository.findById(1L)).willReturn(Optional.of(company));
-        given(reviewRepository.calculateRatingByCompanyId(1L)).willReturn(Optional.empty());
+        given(reviewRepository.findRating(1L)).willReturn(Optional.empty());
 
         CompanyResponse response = companyService.findDetail(1L);
 
@@ -147,7 +147,7 @@ class CompanyServiceTest {
         application.startInterview(java.time.LocalDateTime.of(2026, 11, 5, 10, 0));
         application.accept();
         given(companyRepository.findById(1L)).willReturn(Optional.of(company));
-        given(reviewRepository.findWrittenByCompanyId(1L))
+        given(reviewRepository.findNewestRatedReviews(1L))
                 .willReturn(List.of(writtenReview(application, "면접관이 친절했어요", 5)));
 
         List<CompanyReviewResponse> reviews = companyService.findReviews(1L);
@@ -167,7 +167,7 @@ class CompanyServiceTest {
         Review review = writtenReview(application, "면접관이 친절했어요", 5);
         review.describeInterview(4, InterviewAtmosphere.TENSE, ApplyRoute.RECRUITER, List.of("자기소개", "프로젝트 경험"));
         given(companyRepository.findById(1L)).willReturn(Optional.of(company));
-        given(reviewRepository.findWrittenByCompanyId(1L)).willReturn(List.of(review));
+        given(reviewRepository.findNewestRatedReviews(1L)).willReturn(List.of(review));
 
         List<CompanyReviewResponse> reviews = companyService.findReviews(1L);
 

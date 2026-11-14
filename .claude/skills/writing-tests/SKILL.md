@@ -28,12 +28,12 @@ description: Use when writing, modifying, or reviewing test code in this project
 | 대상 | 방식 | 비중 |
 |---|---|---|
 | `domain/*` 엔티티·enum (비즈니스 규칙) | Spring 없는 순수 단위 테스트. 실제 협력 객체 사용 | **가장 많이** |
-| `presentation/controller` | `@WebMvcTest` + `@MockBean` 서비스. 요청 매핑, 검증, 상태코드, 에러 응답 | 적당히 |
+| `presentation/controller` | `@WebMvcTest` + `@MockitoBean` 서비스. 요청 매핑, 검증, 상태코드, 에러 응답 | 적당히 |
 | `application/service` | `@ExtendWith(MockitoExtension.class)`. 도메인 호출과 협력 흐름 위주 (로직은 도메인에 있으므로 얇게) | 적게 |
 | `infrastructure/persistence` | 쿼리 메서드가 직접 정의된 경우에만 | 필요한 만큼 |
 | 전체 연동 `@SpringBootTest` | 핵심 흐름 소수만. 컨텍스트가 새로 뜨므로 느리다 | 아주 적게 |
 
-- 이 프로젝트는 Spring Boot 3.3.x라서 `@MockBean`을 쓴다. `@MockitoBean`은 3.4부터이므로 Boot를 올릴 때 전환한다.
+- 컨트롤러 테스트에서 서비스·토큰 같은 협력 객체를 대체할 때는 `@MockitoBean`을 쓴다. Boot 3.4에서 삭제 예정이 된 `@MockBean`은 쓰지 않는다.
 - 서비스 테스트에서 서비스가 값을 꺼내 판단하는 로직이 필요해 보이면 테스트가 아니라 **서비스 설계 문제**다. 도메인으로 옮긴다. (CLAUDE.md "계층별 책임")
 - 테스트 대역의 우선순위는 **실제 객체 → Fake → Mock** 순이다. 실제 객체가 빠르고 결정적이면 그것을 쓴다. 도메인 객체끼리는 mock으로 대체하지 않는다. mock 대상은 DB, 네트워크, 시간처럼 느리거나 비결정적인 것이다. 이미 `FakePasswordHasher`처럼 Fake가 있으면 mock보다 재사용한다.
 - mock을 쓸 때도 `given`으로 정한 값을 그대로 되돌려 확인하지 않는다. 그런 테스트는 구현을 복제하는 거울일 뿐이다. 결과 상태·예외·소유권 같은 **관찰 가능한 결과**를 검증한다.
@@ -116,8 +116,8 @@ class ApplicationTest {
 class CompanyControllerTest {
 
     @Autowired MockMvc mockMvc;
-    @MockBean TokenProvider tokenProvider;
-    @MockBean CompanyService companyService;
+    @MockitoBean TokenProvider tokenProvider;
+    @MockitoBean CompanyService companyService;
 
     @BeforeEach
     void setUp() {

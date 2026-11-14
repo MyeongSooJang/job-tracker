@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 프로젝트 개요
 
-취업 활동(서류 제출 ~ 면접) 기록 관리용 Spring Boot 3.3 / Java 21 백엔드 (Gradle, JPA, PostgreSQL). 프론트엔드는 별도 저장소(Vercel 배포)이며, 설계 문서는 `docs/superpowers/specs/`, 구현 계획은 `docs/superpowers/plans/`에 둔다. `docs/`는 `docs/ERD.md`만 git에서 추적하고 나머지(`superpowers`, `incidents`, `ssm` 등)는 로컬 전용이다.
+취업 활동(서류 제출 ~ 면접) 기록 관리용 Spring Boot 3.5 / Java 21 백엔드 (Gradle, JPA, PostgreSQL). 프론트엔드는 별도 저장소(Vercel 배포)이며, 설계 문서는 `docs/superpowers/specs/`, 구현 계획은 `docs/superpowers/plans/`에 둔다. `docs/`는 `docs/ERD.md`만 git에서 추적하고 나머지(`superpowers`, `incidents`, `ssm` 등)는 로컬 전용이다.
 
 ## 명령어
 
@@ -33,9 +33,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Spring Data JPA 메소드 이름
 
-- 파생 쿼리 이름이 **30자 이상**이거나, 조건이 **3개 이상**이거나, `OrderBy`가 붙으면 쓰지 않고 `@Query`와 의미 중심 이름으로 바꾼다. (예: `findInPeriod`, `summarizeByCompany`)
-- `@Query`는 `XxxJpaRepository`에 `@Override`로 두고, 정렬·범위 포함 여부 같은 의미는 도메인 `XxxRepository`의 메소드 주석에 적는다.
+- 파생 쿼리 이름이 **30자 이상**이거나, 조건이 **3개 이상**이거나, `OrderBy`가 붙으면 쓰지 않고 `@Query`와 의미 중심 이름으로 바꾼다. (예: `findInPeriod`, `findRatings`)
+- `@Query`는 `XxxJpaRepository`에 `@Override`로 둔다. 정렬·범위 포함 여부 같은 의미는 주석이 아니라 메소드 이름에 담고, 파라미터가 알려주는 정보(`ByCompanyId` 등)는 이름에 반복하지 않는다. (예: `findNewestRatedReviews(companyId)`)
 - 파라미터는 `@Param`으로 이름을 명시한다.
+- `@Query` 안에 클래스·enum의 전체 경로를 쓰지 않는다. 집계 결과는 `select new 경로(...)` 대신 `select a.x, count(a)`로 쓰고 반환 타입(record)에 맡기며(생성자 인자 순서와 같게, 별칭 없이), enum 값은 경로 없이 쓴다. (예: `a.status = RESUME_SUBMITTED`)
 - 기준 미만의 짧은 파생 쿼리(`findByUserIdAndStatus`)는 그대로 둔다.
 
 ### 계층별 책임
@@ -73,6 +74,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - 연관관계가 LAZY라서 컨트롤러/DTO 변환 시점에 `LazyInitializationException`이 발생할 수 있다. 서비스 트랜잭션 안에서 필요한 연관을 초기화할 것.
 - CORS 허용 origin은 `CorsConfig`에 하드코딩되어 있다 (localhost:5173, `*.vercel.app`, 프론트엔드 Vercel 도메인). 프론트 도메인이 바뀌면 여기를 수정.
+- 삭제 예정(`@Deprecated(forRemoval = true)`)으로 표시된 API는 새로 쓰지 않는다. 컴파일 경고 `[removal]`이 나오면 그 자리에서 새 API로 교체하고, 라이브러리 버전을 올린 뒤에는 `./gradlew compileJava compileTestJava --rerun-tasks`로 경고가 0건인지 확인한다. (예: `@MockBean` 대신 `@MockitoBean`)
 
 ## 테스트 작성
 

@@ -12,7 +12,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.context.annotation.Import;
 import com.ssangtteongnip.domain.user.TokenProvider;
 import com.ssangtteongnip.global.config.SecurityConfig;
@@ -37,9 +37,9 @@ class ReviewControllerTest {
     private static final String BEARER = "Bearer valid-token";
 
     @Autowired MockMvc mockMvc;
-    @MockBean TokenProvider tokenProvider;
+    @MockitoBean TokenProvider tokenProvider;
     @Autowired ObjectMapper objectMapper;
-    @MockBean ReviewService reviewService;
+    @MockitoBean ReviewService reviewService;
 
     @BeforeEach
     void setUp() {
